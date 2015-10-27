@@ -8,6 +8,12 @@ A Meteor package to easily define application document types.
 meteor add tooit:content-types
 ```
 
+## Example Apps
+
+* http://content-types-example.meteor.com/
+* http://content-types-example-bootstrap.meteor.com/ (to be created)
+* http://content-types-example-materialize.meteor.com/ (to be created)
+
 ## Features
 
 ### Killing

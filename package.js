@@ -4,3 +4,37 @@ Package.describe({
   version: '0.0.1',
   git: 'git@github.com:tooit/meteor-content-types.git'
 });
+
+Package.onUse(function(api) {
+  api.versionsFrom(['METEOR@0.9.3', 'METEOR@0.9.4', 'METEOR@1.0']);
+
+  var dependencies = [
+    'templating',
+    'check',
+    'mongo',
+    'underscore@1.0.0',
+    'iron:router@1.0.9',
+    'aldeed:simple-schema@1.3.2',
+    'aldeed:collection2@2.0.0',
+    'aldeed:autoform@5.7.1',
+    'aldeed:delete-button@1.0.0'
+  ];
+  api.use(dependencies);
+  api.imply(dependencies);
+
+  api.addFiles([
+    'client/lib/ContentType.js',
+    'client/lib/ContentTypes.js',
+    'client/lib/UIHelpers.js',
+    'client/templates/default/index.html',
+    'client/templates/default/create.html',
+    'client/templates/default/read.html',
+    'client/templates/default/update.html',
+    'client/templates/default/delete.html'
+  ], 'client');
+
+  api.export([
+    'ContentType',
+    'ContentTypes',
+  ], 'client');
+});
