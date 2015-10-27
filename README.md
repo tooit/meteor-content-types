@@ -17,8 +17,8 @@ application document types.
   - [Endpoints](#endpoints)
     - [Enabling or disabling endpoints](#enabling-or-disabling-endpoints)
     - [Template default metadata](#template-default-metadata)
+    - [Labels](#labels)
 - [Examples](#examples)
-- [TODO](#todo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -35,6 +35,7 @@ application document types.
 - Index page with a paged list of all documents.
 - Create, Read, Update and Delete endpoints.
 - Flexible and customizable templates.
+- i18n friendly.
 
 ### Extras
 
@@ -152,8 +153,8 @@ them in case you need to provide your our template implementation.
 
 #### Template default metadata
 
-By default each Index+CRUD template will have a default metadata to provide
-the page title, summary, etc.
+By default each Index+CRUD template support default metadata to provide
+elements like page title, summary, etc.
 
 ```javascript
 
@@ -192,24 +193,29 @@ the default theme will render this.
 
 You could check the default metadata rendered on each template at TEMPLATES_default.md
 
+#### Labels
+
+Provided templates recieves the ``ct.labels`` object with several texts. You
+could modify texts using i18n labels or just create new ones if you are using
+your own templates.
+
+```javascript
+
+  BooksCT = new ContentType({
+    ...
+    labels: {
+      deletePrefix: "Hey, pay attention!! The delete action is unrecoverable!! You are about to delete ",
+      deleteSuffix: "Are you 110% positive?",
+      noItemsFound: "No books found."
+    }
+  });
+
+```
+
 ## Examples
 
 - http://content-types-example.meteor.com/
-- http://content-types-example-bootstrap.meteor.com/ (to be created)
-- http://content-types-example-materialize.meteor.com/ (to be created)
+<!-- - http://content-types-example-bootstrap.meteor.com/ (to be created) -->
+<!-- - http://content-types-example-materialize.meteor.com/ (to be created) -->
 
-## TODO
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<!-- ## TODO -->
