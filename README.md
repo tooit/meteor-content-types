@@ -100,7 +100,7 @@ This example will automatically provide the following routes:
 - ``admin/content/books/create`` with an autoform insert form (quickForm).
 - ``admin/content/books/:_id`` with a simple table showing all document values.
 - ``admin/content/books/:_id/edit`` with an autoform update form (quickForm).
-- ``admin/content/books/:_id/delete` with a confirmation page (quickRemoveButton).
+- ``admin/content/books/:_id/delete`` with a confirmation page (quickRemoveButton).
 
 ## Options
 
