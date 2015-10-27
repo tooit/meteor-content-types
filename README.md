@@ -17,7 +17,6 @@ application document types.
   - [Endpoints](#endpoints)
     - [Enabling or disabling endpoints](#enabling-or-disabling-endpoints)
     - [Template default metadata](#template-default-metadata)
-- [{{{ title }}}](#-title-)
 - [Examples](#examples)
 - [TODO](#todo)
 
