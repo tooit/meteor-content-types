@@ -1,2 +1,20 @@
 <template name="CT_Update_default">
+  {{#with ct.meta}}
+    {{#if title}}<h2>{{{title}}}</h2>{{/if}}
+    {{#if summary}}<p>{{{summary}}}</p>{{/if}}
+    {{#if help}}<small>{{{help}}}</small>{{/if}}
+    <hr/>
+  {{/with}}
+
+  {{#with item}}
+    {{> quickForm collection=formCollection id=formId type=formType doc=this}}
+
+    <hr>
+
+    <a href="{{pathFor route=ct.pathTo.read}}" title="{{ct.labels.linkView}}">{{ct.labels.linkView}}</a>
+    &nbsp;|&nbsp;
+    <a href="{{pathFor route=ct.pathTo.create}}" title="{{ct.labels.linkCreate}}">{{ct.labels.linkCreate}}</a>
+    &nbsp;|&nbsp;
+    <a href="{{pathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a>
+  {{/with}}
 </template>
