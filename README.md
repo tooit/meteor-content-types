@@ -17,7 +17,7 @@ application document types.
   - [Endpoints](#endpoints)
     - [Enabling or disabling endpoints](#enabling-or-disabling-endpoints)
     - [Template default metadata](#template-default-metadata)
-    - [Labels](#labels)
+  - [Labels](#labels)
 - [Examples](#examples)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -193,7 +193,7 @@ the default theme will render this.
 
 You could check the default metadata rendered on each template at TEMPLATES_default.md
 
-#### Labels
+### Labels
 
 Provided templates recieves the ``ct.labels`` object with several texts. You
 could modify texts using i18n labels or just create new ones if you are using
