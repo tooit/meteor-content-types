@@ -1,7 +1,7 @@
 Package.describe({
   name: 'tooit:content-types',
   summary: 'A Meteor package to easly define application document types.',
-  version: '0.0.3',
+  version: '0.0.4',
   git: 'git@github.com:tooit/meteor-content-types.git'
 });
 
