@@ -63,29 +63,32 @@ ContentType.prototype._setCRUDEndPoints = function () {
   var self = this;
   var defaultRoutes = this._getCRUDEndPoints();
 
-  _.each(defaultRoutes, function (route, key) {
+  _.each(defaultRoutes, function (endpoint, key) {
+    check(endpoint.enabled, Boolean);
 
-    check(route.path, String);
-    check(route.name, String);
-    check(route.template, String);
+    if(endpoint.enabled){
+      check(endpoint.path, String);
+      check(endpoint.name, String);
+      check(endpoint.template, String);
 
-    var copyOf = route.template;
-    var copyTo = route.template+'_'+self._ctid;
+      var copyOf = endpoint.template;
+      var copyTo = endpoint.template+'_'+self._ctid;
 
-    // Copy the default provided template to be Content Type specific.
-    Template[copyTo] = new Template(copyTo, Template[copyOf].renderFunction);
+      // Copy the default provided template to be Content Type specific.
+      Template[copyTo] = new Template(copyTo, Template[copyOf].renderFunction);
 
-    // Attach default helpers for the Content Type specific template.
-    Template[route.template+'_'+self._ctid].helpers(self._getCRUDTemplateHelpers(key));
+      // Attach default helpers for the Content Type specific template.
+      Template[endpoint.template+'_'+self._ctid].helpers(self._getCRUDTemplateHelpers(key));
 
-    // Set the new Content Type specific template to the route being created.
-    route.template = route.template+'_'+self._ctid;
+      // Set the new Content Type specific template to the endpoint being created.
+      endpoint.template = endpoint.template+'_'+self._ctid;
 
-    // Create and store the Iron Router route.
-    self.routes[key] = Router.route(route.path, {
-      name: route.name,
-      template: route.template
-    });
+      // Create and store the Iron Router route.
+      self.routes[key] = Router.route(endpoint.path, {
+        name: endpoint.name,
+        template: endpoint.template
+      });
+    }
   });
 };
 
@@ -112,7 +115,8 @@ ContentType.prototype._getCRUDEndPoint = function (key) {
  */
 ContentType.prototype._getCRUDEndPoints = function () {
 
-  return {
+  var self = this;
+  var endpoints = {
     index: {
       enabled: true,
       path: this._basePath+'/'+this._ctid+'/index',
@@ -159,6 +163,14 @@ ContentType.prototype._getCRUDEndPoints = function () {
       }
     }
   }
+
+  _.each(self.options.endpoints, function (endpoint, key) {
+    if (Match.test(endpoint.enabled, Boolean)){
+      endpoints[key].enabled = endpoint.enabled;
+    }
+  });
+
+  return endpoints;
 }
 
 /**
