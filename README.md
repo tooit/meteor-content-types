@@ -3,29 +3,32 @@
 Content types for Meteor applications. A Meteor package to easily define
 application document types.
 
-## Table of contents
+## Table of Contents
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 
-  - [Install](#install)
-  - [Features](#features)
-  - [Attributes](#attributes)
+- [Install](#install)
+- [Features](#features)
+  - [Extras](#extras)
 - [Basic usage](#basic-usage)
 - [Options](#options)
   - [Endpoints](#endpoints)
     - [Enabling or disabling endpoints](#enabling-or-disabling-endpoints)
     - [Template default metadata](#template-default-metadata)
-  - [Examples](#examples)
+- [{{{ title }}}](#-title-)
+- [Examples](#examples)
 - [TODO](#todo)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Install
 
-```
-meteor add tooit:content-types
+```bash
+
+  meteor add tooit:content-types
+
 ```
 
 ## Features
@@ -34,16 +37,17 @@ meteor add tooit:content-types
 - Create, Read, Update and Delete endpoints.
 - Flexible and customizable templates.
 
-## Attributes
+### Extras
 
 * **Abstract code**: you can still use Meteor.Collection, SimpleSchema, Collection2 and Autoform code without any wrappers or weird modifiers.
 * **Abstract security**: You can still setup your application security using the same allow/deny methods or use ongoworks:security.
 
-# Basic usage
+## Basic usage
 
 Let's define our Collection in a Meteor client and server scope.
 
-```
+```javascript
+
   // Example taken from https://github.com/aldeed/meteor-autoform
 
   Books = new Mongo.Collection("books");
@@ -82,11 +86,13 @@ Let's define our Collection in a Meteor client and server scope.
 Meteor's client only scope.
 
 ```javascript
+
   BooksCT = new ContentType({
     collection:   Books, // The collection defined above.
     ctid:         "book", // The unique identifier for this content type.
     title:        "Book", // Human redable name.
   });
+
 ```
 
 This example will automatically provide the following routes:
@@ -97,16 +103,17 @@ This example will automatically provide the following routes:
 - ##admin/content/books/:_id/edit## with an autoform update form (quickForm).
 - ##admin/content/books/:_id/delete## with a confirmation page (quickRemoveButton).
 
-# Options
+## Options
 
-## Endpoints
+### Endpoints
 
-### Enabling or disabling endpoints
+#### Enabling or disabling endpoints
 
 By default, all Index+CRUD endpoints are enabled but you could easily disable it
 in case you need to provide your our implementation.
 
 ```javascript
+
   BooksCT = new ContentType({
     ...
     endpoints: {
@@ -114,14 +121,16 @@ in case you need to provide your our implementation.
       delete: {enabled: false}
     }
   });
+
 ```
 
-### Template default metadata
+#### Template default metadata
 
 By default each Index+CRUD template will have a default metadata to provide
 the page title, summary, etc.
 
 ```javascript
+
   BooksCT = new ContentType({
     ...
     endpoints: {
@@ -135,6 +144,7 @@ the page title, summary, etc.
       }
     }
   });
+
 ```
 
 If you are overriding default templates, you could write your own keys and they
@@ -162,7 +172,7 @@ You could check the default metadata rendered on each template at TEMPLATES_defa
 - http://content-types-example-bootstrap.meteor.com/ (to be created)
 - http://content-types-example-materialize.meteor.com/ (to be created)
 
-# TODO
+## TODO
 
 
 
