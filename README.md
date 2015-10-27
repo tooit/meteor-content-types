@@ -96,20 +96,47 @@ Meteor's client only scope.
 
 This example will automatically provide the following routes:
 
-- ##admin/content/books/index## with a simple list of documents.
-- ##admin/content/books/create## with an autoform insert form (quickForm).
-- ##admin/content/books/:_id## with a simple table showing all document values.
-- ##admin/content/books/:_id/edit## with an autoform update form (quickForm).
-- ##admin/content/books/:_id/delete## with a confirmation page (quickRemoveButton).
+- ``admin/content/books/index`` with a simple list of documents.
+- ``admin/content/books/create`` with an autoform insert form (quickForm).
+- ``admin/content/books/:_id`` with a simple table showing all document values.
+- ``admin/content/books/:_id/edit`` with an autoform update form (quickForm).
+- ``admin/content/books/:_id/delete` with a confirmation page (quickRemoveButton).
 
 ## Options
 
 ### Endpoints
 
+You could customize each endpoint like this:
+
+```javascript
+
+  BooksCT = new ContentType({
+    ...
+    endpoints: {
+      index: {
+        ...
+      },
+      create: {
+        ...
+      },
+      read: {
+        ...
+      },
+      update: {
+        ...
+      },
+      delete: {
+        ...
+      }
+    }
+  });
+
+```
+
 #### Enabling or disabling endpoints
 
-By default, all Index+CRUD endpoints are enabled but you could easily disable it
-in case you need to provide your our implementation.
+By default, all Index+CRUD endpoints are enabled but you could easily disable
+them in case you need to provide your our template implementation.
 
 ```javascript
 
