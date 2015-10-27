@@ -28,6 +28,12 @@ ContentType = function (options) {
   // Public access to Index+CRUD routes.
   this.routes = {};
 
+  // Store allowed values based on constructor options.
+  this.options = {
+    endpoints: options.endpoints || {},
+    resources: options.resources || {}
+  }
+
   // Validate mandatory data before we initialize the content type.
   check(this._ctid, String);
   check(this._theme, String);
@@ -43,6 +49,7 @@ ContentType = function (options) {
  * @return {[type]} [description]
  */
 ContentType.prototype.initialize = function () {
+
   // Create all routes for this particular content type.
   this._setCRUDEndPoints();
 }
@@ -51,10 +58,12 @@ ContentType.prototype.initialize = function () {
  * Creates the Iron Router routes for each Index+CRUD endpoint.
  */
 ContentType.prototype._setCRUDEndPoints = function () {
+
   var self = this;
   var defaultRoutes = this._getCRUDEndPoints();
 
   _.each(defaultRoutes, function (route, key) {
+
     check(route.path, String);
     check(route.name, String);
     check(route.template, String);
@@ -85,10 +94,10 @@ ContentType.prototype._setCRUDEndPoints = function () {
  * @return {Object}     Meteor template helpers.
  */
 ContentType.prototype._getCRUDTemplateHelpers = function (key) {
+
   check(key, String);
 
   var self = this;
-
   var helpers = {
     index: {
       fields: function(){
@@ -142,7 +151,7 @@ ContentType.prototype._getCRUDTemplateHelpers = function (key) {
 
   // Helpers common to all templates.
   helpers[key].ct = {
-    meta: {},
+    meta: self._getCRUDEndPointMetadata(key),
     pathTo: {
       index:    'ct.'+self._ctid+'.index',
       create:   'ct.'+self._ctid+'.create',
@@ -162,32 +171,87 @@ ContentType.prototype._getCRUDTemplateHelpers = function (key) {
  * @return {Object} The basic information needed to build the routes.
  */
 ContentType.prototype._getCRUDEndPoints = function () {
+
   return {
     index: {
+      enabled: true,
       path: this._basePath+'/'+this._ctid+'/index',
       name: 'ct.'+this._ctid+'.index',
-      template: 'CT_Index_'+this._theme
+      template: 'CT_Index_'+this._theme,
+      meta: {
+        title: 'List all documents of type <strong>' + this._ctid + '</strong>'
+      }
     },
     create: {
+      enabled: true,
       path: this._basePath+'/'+this._ctid+'/create',
       name: 'ct.'+this._ctid+'.create',
-      template: 'CT_Create_'+this._theme
+      template: 'CT_Create_'+this._theme,
+      meta: {
+        title: 'Create new <strong>' + this._ctid + '</strong>'
+      }
     },
     read: {
+      enabled: true,
       path: this._basePath+'/'+this._ctid+'/:_id',
       name: 'ct.'+this._ctid+'.read',
-      template: 'CT_Read_'+this._theme
+      template: 'CT_Read_'+this._theme,
+      meta: {
+        title: 'View <strong>' + this._ctid + '</strong>'
+      }
     },
     update: {
+      enabled: true,
       path: this._basePath+'/'+this._ctid+'/:_id/edit',
       name: 'ct.'+this._ctid+'.update',
-      template: 'CT_Update_'+this._theme
+      template: 'CT_Update_'+this._theme,
+      meta: {
+        title: 'Update <strong>' + this._ctid + '</strong>'
+      }
     },
     delete: {
+      enabled: true,
       path: this._basePath+'/'+this._ctid+'/:_id/delete',
       name: 'ct.'+this._ctid+'.delete',
-      template: 'CT_Delete_'+this._theme
+      template: 'CT_Delete_'+this._theme,
+      meta: {
+        title: 'Delete <strong>' + this._ctid + '</strong>'
+      }
     }
   }
 }
 
+/**
+ * Getter function to return a single endpoint data.
+ *
+ * @param  {String} key The endpoint identifier.
+ * @return {Object}     A single endpoint data.
+ */
+ContentType.prototype._getCRUDEndPoint = function (key) {
+
+  check(key, String);
+
+  var endpoints = this._getCRUDEndPoints();
+
+  return endpoints[key];
+}
+
+/**
+ * Extends the default endpoint metadata with the options passed
+ * on initialization.
+ *
+ * @param  {String} key The endpoint identifier.
+ * @return {Object}     The endpoint metadata.
+ */
+ContentType.prototype._getCRUDEndPointMetadata = function (key) {
+  check(key, String);
+
+  var self = this;
+  var optionEndpoint = self.options.endpoints[key] || {};
+  var defaultEndpoint = self._getCRUDEndPoint(key) || {};
+
+  if(Match.test(optionEndpoint.meta, Object) && Match.test(defaultEndpoint.meta, Object))
+    defaultEndpoint = _.extend(defaultEndpoint.meta, optionEndpoint.meta);
+
+  return defaultEndpoint;
+}
