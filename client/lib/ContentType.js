@@ -11,8 +11,6 @@ ContentType = function (options) {
   check(options.collection._c2, Object);
   check(options.collection._c2._simpleSchema, SimpleSchema);
 
-  /** Public properties */
-
   // The unique identifier of this content type.
   this._ctid = options.ctid;
 
@@ -28,7 +26,10 @@ ContentType = function (options) {
   // Public access to Index+CRUD routes.
   this.routes = {};
 
-  // Store allowed values based on constructor options.
+  // Store reactive display state.
+  this.displays = {};
+
+  // Store allowed values based on recieved options.
   this.options = {
     endpoints: options.endpoints || {},
     resources: options.resources || {},
@@ -46,51 +47,141 @@ ContentType = function (options) {
 
 /**
  * Run the initialization procedures.
- *
- * @return {[type]} [description]
  */
 ContentType.prototype.initialize = function () {
+  var self = this;
+  var endpoints = this._getEndPoints();
 
-  // Create all routes for this particular content type.
-  this._setCRUDEndPoints();
+  _.each(endpoints, function (endpoint, key){
+    check(endpoint.enabled, Boolean);
+
+    if (endpoint.enabled) {
+      // Extend default endpoint displays based on received options.
+      var defaultDisplay = "default";
+      var option = self.options.endpoints[key];
+
+      if (Match.test(option, Object) && Match.test(option.display, String)){
+        defaultDisplay = option.display;
+      }
+      self.displays[key] = new ReactiveVar(defaultDisplay);
+
+      // Creates the Router routes for each Index+CRUD endpoint.
+      self._setEndPoint(endpoint, key);
+    }
+  });
 }
 
 /**
- * Creates the Iron Router routes for each Index+CRUD endpoint.
+ * Builds the router route, the wrapper template and set the reactive
+ * helper used by the wrapper template to allow reactive display update.
+ *
+ * @param {String} key      The endpoint key.
+ * @param {Object} endpoint The endpoint settings.
  */
-ContentType.prototype._setCRUDEndPoints = function () {
+ContentType.prototype._setEndPoint = function (endpoint, key) {
+  check(endpoint, {
+    enabled:    Boolean,
+    display:    String,
+    path:       String,
+    name:       String,
+    displays:   Object
+  });
+
+  check(key, String);
+  check(ContentTypes.settings.router, String);
 
   var self = this;
-  var defaultRoutes = this._getCRUDEndPoints();
+  var templatePrefix = ContentTypes.settings.templatePrefix[key];
+  var templateWrapperOf = templatePrefix+"_"+self._theme;
+  var templateWrapperTo =  templatePrefix+"_"+self._theme+"_"+self._ctid;
 
-  _.each(defaultRoutes, function (endpoint, key) {
-    check(endpoint.enabled, Boolean);
+  // Fallback when the theme wrapper was not implemented.
+  // Should never happend but just in case.
+  check(Template[templateWrapperOf], Blaze.Template);
+  check(Template[templateWrapperOf].renderFunction, Function);
 
-    if(endpoint.enabled){
-      check(endpoint.path, String);
-      check(endpoint.name, String);
-      check(endpoint.template, String);
+  Template[templateWrapperTo] = new Template(templateWrapperTo, Template[templateWrapperOf].renderFunction);
 
-      var copyOf = endpoint.template;
-      var copyTo = endpoint.template+'_'+self._ctid;
+  // Once we are sure the template wrapper exist, we build the route
+  // with a reactive template name to allow realtime display update.
+  Template[templateWrapperTo].helpers({
+    template: function () {
+      var display = self.displays[key].get();
+      var template = self._getTemplateDisplayName(key, templateWrapperOf, display);
 
-      // Copy the default provided template to be Content Type specific.
-      Template[copyTo] = new Template(copyTo, Template[copyOf].renderFunction);
+      self._setTemplateHelpers(key, template, display);
 
-      // Attach default helpers for the Content Type specific template.
-      Template[endpoint.template+'_'+self._ctid].helpers(self._getCRUDTemplateHelpers(key));
-
-      // Set the new Content Type specific template to the endpoint being created.
-      endpoint.template = endpoint.template+'_'+self._ctid;
-
-      // Create and store the Iron Router route.
-      self.routes[key] = Router.route(endpoint.path, {
-        name: endpoint.name,
-        template: endpoint.template
-      });
+      return template;
     }
   });
-};
+
+  switch (ContentTypes.settings.router) {
+    case 'iron_router':
+      self.routes[key] = Router.route(endpoint.path, {
+        name: endpoint.name,
+        template: templateWrapperTo
+      });
+      break;
+    case 'flow_router':
+      // @todo: add support for Flow Router.
+      break;
+  }
+}
+
+/**
+ * [_attachTemplateHelpers description]
+ * @param  {[type]} key      [description]
+ * @param  {[type]} template [description]
+ * @param  {[type]} display  [description]
+ * @return {[type]}          [description]
+ */
+ContentType.prototype._setTemplateHelpers = function (key, template, display) {
+  check(key, String);
+  check(template, String);
+  check(Template[template], Blaze.Template);
+
+  var self = this;
+  var helpers = self._getTemplateHelpers(key);
+  var option  = self.options.endpoints[key];
+
+  // Extend display helpers based on recieved options.
+  if (option && Match.test(option.displays, Object) && Match.test(option.displays[display], {helpers: Object})){
+    helpers = _.extend(helpers, option.displays[display].helpers);
+  }
+
+  // Attach default helpers for the Content Type specific template.
+  Template[template].helpers(helpers);
+}
+
+/**
+ * Generates a new
+ * @param  {[type]} key             [description]
+ * @param  {[type]} templateWrapper [description]
+ * @param  {[type]} display         [description]
+ * @return {[type]}                 [description]
+ */
+ContentType.prototype._getTemplateDisplayName = function (key, templateWrapper, display) {
+  check(key, String);
+  check(templateWrapper, String);
+  check(display, String);
+
+  var self = this;
+  var copyOf  = templateWrapper+'_'+display;
+  var copyTo  = templateWrapper+'_'+display+'_'+self._ctid;
+
+  // Verify that origin template exists but if not we provide
+  // default display as fallback.
+  if(!Match.test(Template[copyOf], Blaze.Template)){
+    copyOf = templateWrapper+'_default';
+  }
+
+  check(Template[copyOf].renderFunction, Function);
+
+  // Duplicate the default template to make it Content Type specific.
+  Template[copyTo] = new Template(copyTo, Template[copyOf].renderFunction);
+
+  return copyTo;
+}
 
 /**
  * Getter function to return a single endpoint data.
@@ -98,12 +189,10 @@ ContentType.prototype._setCRUDEndPoints = function () {
  * @param  {String} key The endpoint identifier.
  * @return {Object}     A single endpoint data.
  */
-ContentType.prototype._getCRUDEndPoint = function (key) {
-
+ContentType.prototype._getEndPoint = function (key) {
   check(key, String);
 
-  var endpoints = this._getCRUDEndPoints();
-
+  var endpoints = this._getEndPoints();
   return endpoints[key];
 }
 
@@ -113,57 +202,58 @@ ContentType.prototype._getCRUDEndPoint = function (key) {
  *
  * @return {Object} The basic information needed to build the routes.
  */
-ContentType.prototype._getCRUDEndPoints = function () {
-
+ContentType.prototype._getEndPoints = function () {
   var self = this;
+
   var endpoints = {
     index: {
       enabled: true,
-      path: this._basePath+'/'+this._ctid+'/index',
-      name: 'ct.'+this._ctid+'.index',
-      template: 'CT_Index_'+this._theme,
-      meta: {
-        title: 'List all documents of type <strong>' + this._ctid + '</strong>'
+      display: 'default',
+      path: self._basePath+'/'+self._ctid+'/index',
+      name: 'ct.'+self._ctid+'.index',
+      displays: {
+        default: {}
       }
     },
     create: {
       enabled: true,
+      display: 'default',
       path: this._basePath+'/'+this._ctid+'/create',
       name: 'ct.'+this._ctid+'.create',
-      template: 'CT_Create_'+this._theme,
-      meta: {
-        title: 'Create new <strong>' + this._ctid + '</strong>'
+      displays: {
+        default: {}
       }
     },
     read: {
       enabled: true,
+      display: 'default',
       path: this._basePath+'/'+this._ctid+'/:_id',
       name: 'ct.'+this._ctid+'.read',
-      template: 'CT_Read_'+this._theme,
-      meta: {
-        title: 'View <strong>' + this._ctid + '</strong>'
+      displays: {
+        default: {}
       }
     },
     update: {
       enabled: true,
+      display: 'default',
       path: this._basePath+'/'+this._ctid+'/:_id/edit',
       name: 'ct.'+this._ctid+'.update',
-      template: 'CT_Update_'+this._theme,
-      meta: {
-        title: 'Update <strong>' + this._ctid + '</strong>'
+      displays: {
+        default: {}
       }
     },
     delete: {
       enabled: true,
+      display: 'default',
       path: this._basePath+'/'+this._ctid+'/:_id/delete',
       name: 'ct.'+this._ctid+'.delete',
-      template: 'CT_Delete_'+this._theme,
-      meta: {
-        title: 'Delete <strong>' + this._ctid + '</strong>'
+      displays: {
+        default: {}
       }
     }
   }
 
+  // @todo: check if this is still usefull.
   _.each(self.options.endpoints, function (endpoint, key) {
     if (Match.test(endpoint.enabled, Boolean)){
       endpoints[key].enabled = endpoint.enabled;
@@ -174,41 +264,20 @@ ContentType.prototype._getCRUDEndPoints = function () {
 }
 
 /**
- * Extends the default endpoint metadata with the options passed
- * on initialization.
- *
- * @param  {String} key The endpoint identifier.
- * @return {Object}     The endpoint metadata.
- */
-ContentType.prototype._getCRUDEndPointMetadata = function (key) {
-  check(key, String);
-
-  var self = this;
-  var meta = {};
-  var optionEndpoint = self.options.endpoints[key] || {};
-  var defaultEndpoint = self._getCRUDEndPoint(key) || {};
-
-  if(Match.test(optionEndpoint.meta, Object) && Match.test(defaultEndpoint.meta, Object)){
-    meta = _.extend(defaultEndpoint.meta, optionEndpoint.meta);
-  }else{
-    meta = defaultEndpoint.meta;
-  }
-
-  return meta;
-}
-
-/**
  * Provide default helpers for Content Type templates.
  * @param  {String} key The endpoint identifier.
  * @return {Object}     Meteor template helpers.
  */
-ContentType.prototype._getCRUDTemplateHelpers = function (key) {
-
+ContentType.prototype._getTemplateHelpers = function (key) {
   check(key, String);
 
   var self = this;
+
   var helpers = {
     index: {
+      meta: {
+        title: 'Documents of type <strong>' + self._ctid + '</strong>'
+      },
       items: function () {
         var cursor = self._collection.find({});
         return {
@@ -218,29 +287,41 @@ ContentType.prototype._getCRUDTemplateHelpers = function (key) {
       }
     },
     create: {
+      meta: {
+        title: 'Create new <strong>' + this._ctid + '</strong>'
+      },
       formCollection: self._collection,
       formId: 'insert-form-'+self._ctid,
       formType: 'insert',
     },
     read: {
+      meta: {
+        title: 'View <strong>' + this._ctid + '</strong>'
+      },
       item: function () {
-        var router = Router.current();
+        var router = self.currentRoute();
         return self._collection.findOne({_id:router.params._id});
       }
     },
     update: {
+      meta: {
+        title: 'Update <strong>' + this._ctid + '</strong>'
+      },
       formCollection: self._collection,
       formId: 'update-form-'+self._ctid,
       formType: 'update',
       item: function () {
-        var router = Router.current();
+        var router = self.currentRoute();
         return self._collection.findOne({_id:router.params._id});
       }
     },
     delete: {
+      meta: {
+        title: 'Delete <strong>' + this._ctid + '</strong>'
+      },
       formCollection: self._collection,
       item: function () {
-        var router = Router.current();
+        var router = self.currentRoute();
         return self._collection.findOne({_id:router.params._id});
       }
     }
@@ -248,46 +329,27 @@ ContentType.prototype._getCRUDTemplateHelpers = function (key) {
 
   // Helpers common to all templates.
   helpers[key].ct = {
-    meta: self._getCRUDEndPointMetadata(key),
-    fields: self._getSchemaFields(),
-    labels: self._getCRUDTemplateLabels(),
+    fields: self._getSimpleSchemaFields(),
+    labels: self._getTemplateLabels(),
     pathTo: {
       index:    'ct.'+self._ctid+'.index',
       create:   'ct.'+self._ctid+'.create',
       read:     'ct.'+self._ctid+'.read',
       update:   'ct.'+self._ctid+'.update',
       delete:   'ct.'+self._ctid+'.delete'
-    },
+    }
   };
 
   return helpers[key];
 }
 
 /**
- * Builds an array with field keys and its labels.
- *
- * @return {Object} An array with key-value objects.
- */
-ContentType.prototype._getSchemaFields = function () {
-
-  var self = this;
-
-  return _.map(self._collection._c2._simpleSchema._schema, function(value, key){
-    return {
-      key: key,
-      value: value.label
-    };
-  });
-}
-
-/**
  * Label abstraction layer to let this package to be i18n friendly and to
- * provide custom labels in case you are using custom templates.
+ * provide custom labels in case you are using custom displays.
  *
  * @return {Object} Key-Value strings.
  */
-ContentType.prototype._getCRUDTemplateLabels = function (labels) {
-
+ContentType.prototype._getTemplateLabels = function (labels) {
   var self = this;
 
   var labels = {
@@ -302,7 +364,10 @@ ContentType.prototype._getCRUDTemplateLabels = function (labels) {
     linkCreate: "Create new document",
     totalItemsPrefix: "Found",
     totalItemsSuffix: "item/s.",
-    noItemsFound: "No documents found."
+    noItemsFound: "No documents found.",
+    thKey: "Key",
+    thLabel: "Label",
+    thValue: "Value"
   }
 
   _.each(self.options.labels, function (label, key) {
@@ -312,4 +377,53 @@ ContentType.prototype._getCRUDTemplateLabels = function (labels) {
   });
 
   return labels;
+}
+
+/**
+ * Builds an array with field keys and labels.
+ *
+ * @return {Object} An array with key-value objects.
+ */
+ContentType.prototype._getSimpleSchemaFields = function () {
+  var self = this;
+
+  return _.map(self._collection._c2._simpleSchema._schema, function(value, key){
+    return {
+      key: key,
+      value: value.label
+    };
+  });
+}
+
+/**
+ * Updates the display for specific endpoint.
+ *
+ * @param {String} key     The endpoint key.
+ * @param {String} display The display name.
+ */
+ContentType.prototype.setDisplay = function (key, display) {
+  check(key, String);
+  check(display, String);
+  check(this.displays[key], ReactiveVar);
+
+  this.displays[key].set(display);
+}
+
+/**
+ * Getter returning the current route with router abstraction.
+ *
+ * @return {Object} The current router route.
+ */
+ContentType.prototype.currentRoute = function () {
+  var current = false;
+
+  switch (ContentTypes.settings.router) {
+    case 'iron_router':
+      current = Router.current();
+      break;
+    case 'flow_router':
+      current = Router.current();
+      break;
+  }
+  return current;
 }
