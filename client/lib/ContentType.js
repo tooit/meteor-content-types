@@ -1,5 +1,5 @@
 /**
- * Constructor function for Content Type initialization.
+ * Constructor function with Content Type initialization.
  *
  * @param {Object} options The content type settings.
  */
@@ -109,8 +109,13 @@ ContentType.prototype._setEndPoint = function (endpoint, key) {
       var display = self.displays[key].get();
       var template = self._getTemplateDisplayName(key, templateWrapperOf, display);
 
-      self._setTemplateHelpers(key, template, display);
 
+
+      self._setTemplateHelpers(key, template, display);
+      self._setTemplateEvents(key, template, display);
+
+      console.log('rendering display:', display);
+      console.log('rendering template:', template);
       return template;
     }
   });
@@ -129,15 +134,16 @@ ContentType.prototype._setEndPoint = function (endpoint, key) {
 }
 
 /**
- * [_attachTemplateHelpers description]
- * @param  {[type]} key      [description]
- * @param  {[type]} template [description]
- * @param  {[type]} display  [description]
- * @return {[type]}          [description]
+ * Attach helpers to Display Templates.
+ *
+ * @param  {String} key      The Endpoint key.
+ * @param  {String} template The Meteor Template where we need to attach the helpers.
+ * @param  {String} display  The Display id.
  */
 ContentType.prototype._setTemplateHelpers = function (key, template, display) {
   check(key, String);
   check(template, String);
+  check(display, String);
   check(Template[template], Blaze.Template);
 
   var self = this;
@@ -145,12 +151,38 @@ ContentType.prototype._setTemplateHelpers = function (key, template, display) {
   var option  = self.options.endpoints[key];
 
   // Extend display helpers based on recieved options.
-  if (option && Match.test(option.displays, Object) && Match.test(option.displays[display], {helpers: Object})){
+  if (option && Match.test(option.displays, Object) && Match.test(option.displays[display], Match.ObjectIncluding({helpers: Object}))){
     helpers = _.extend(helpers, option.displays[display].helpers);
   }
 
   // Attach default helpers for the Content Type specific template.
   Template[template].helpers(helpers);
+}
+
+/**
+ * Attach events to Display Templates.
+ *
+ * @param  {String} key      The Endpoint key.
+ * @param  {String} template The Meteor Template where we need to attach the events.
+ * @param  {String} display  The Display id.
+ */
+ContentType.prototype._setTemplateEvents = function (key, template, display) {
+  check(key, String);
+  check(template, String);
+  check(display, String);
+  check(Template[template], Blaze.Template);
+
+  var self = this;
+  var events = self._getTemplateEvents(key);
+  var option  = self.options.endpoints[key];
+
+  // Extend display events based on recieved options.
+  if (option && Match.test(option.displays, Object) && Match.test(option.displays[display], Match.ObjectIncluding({events: Object}))){
+    events = _.extend(events, option.displays[display].events);
+  }
+
+  // Attach default events for the Content Type specific template.
+  Template[template].events(events);
 }
 
 /**
@@ -265,6 +297,7 @@ ContentType.prototype._getEndPoints = function () {
 
 /**
  * Provide default helpers for Content Type templates.
+ *
  * @param  {String} key The endpoint identifier.
  * @return {Object}     Meteor template helpers.
  */
@@ -341,6 +374,28 @@ ContentType.prototype._getTemplateHelpers = function (key) {
   };
 
   return helpers[key];
+}
+
+/**
+ * Provide default events for Content Type templates.
+ *
+ * @param  {String} key The endpoint identifier.
+ * @return {Object}     Meteor template eventMap.
+ */
+ContentType.prototype._getTemplateEvents = function (key) {
+  check(key, String);
+
+  var self = this;
+
+  var events = {
+    index: {},
+    create: {},
+    read: {},
+    update: {},
+    delete: {}
+  };
+
+  return events[key];
 }
 
 /**
