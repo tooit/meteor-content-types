@@ -109,13 +109,9 @@ ContentType.prototype._setEndPoint = function (endpoint, key) {
       var display = self.displays[key].get();
       var template = self._getTemplateDisplayName(key, templateWrapperOf, display);
 
-
-
       self._setTemplateHelpers(key, template, display);
       self._setTemplateEvents(key, template, display);
 
-      console.log('rendering display:', display);
-      console.log('rendering template:', template);
       return template;
     }
   });
