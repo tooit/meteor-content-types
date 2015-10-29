@@ -7,6 +7,7 @@
 - updated Index+CRUD templates to support displays
 - support default template override
 - added shared package settings under ContentTypes object
+- added eventMaps to Displays
 - updated package description
 - updated documentation for TEMPLATE_default.md
 - updated documentation for README.md
