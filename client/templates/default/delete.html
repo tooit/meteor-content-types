@@ -1,5 +1,9 @@
-<template name="CT_Delete_default">
-  {{#with ct.meta}}
+<template name="CT_delete_default">
+  <div>{{> Template.dynamic template=template }}</div>
+</template>
+
+<template name="CT_delete_default_default">
+  {{#with meta}}
     {{#if title}}<h2>{{{title}}}</h2>{{/if}}
     {{#if summary}}<p>{{{summary}}}</p>{{/if}}
     {{#if help}}<small>{{{help}}}</small>{{/if}}
@@ -8,19 +12,22 @@
 
   {{#with item}}
     {{ct.labels.deletePrefix}} <strong>{{title}}</strong>.<br> {{ct.labels.deleteSuffix}}
-
     {{#quickRemoveButton collection=formCollection _id=_id}}
       {{ct.labels.confirmOk}}
     {{/quickRemoveButton}}
   {{/with}}
 
-  {{#if item}}
-    <hr>
-
-    <a href="{{pathFor route=ct.pathTo.read}}" title="{{ct.labels.linkView}}">{{ct.labels.backToDocument}}</a>
-    &nbsp;|&nbsp;
-    <a href="{{pathFor route=ct.pathTo.update}}" title="{{ct.labels.linkEdit}}">{{ct.labels.linkEdit}}</a>
-    &nbsp;|&nbsp;
-  {{/if}}
-  <a href="{{pathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a>
+  <ul>
+    {{#with item}}
+      {{#if ct.pathTo.read}}
+        <li><a href="{{pathFor route=ct.pathTo.read}}" title="{{ct.labels.linkView}}">{{ct.labels.linkView}}</a></li>
+      {{/if}}
+      {{#if ct.pathTo.update}}
+        <li><a href="{{pathFor route=ct.pathTo.update}}" title="{{ct.labels.linkEdit}}">{{ct.labels.linkEdit}}</a></li>
+      {{/if}}
+    {{/with}}
+    {{#if ct.pathTo.index}}
+      <li><a href="{{pathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
+    {{/if}}
+  </ul>
 </template>

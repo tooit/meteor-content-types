@@ -1,5 +1,9 @@
-<template name="CT_Create_default">
-  {{#with ct.meta}}
+<template name="CT_create_default">
+  <div>{{> Template.dynamic template=template }}</div>
+</template>
+
+<template name="CT_create_default_default">
+  {{#with meta}}
     {{#if title}}<h2>{{{title}}}</h2>{{/if}}
     {{#if summary}}<p>{{{summary}}}</p>{{/if}}
     {{#if help}}<small>{{{help}}}</small>{{/if}}
@@ -8,7 +12,9 @@
 
   {{> quickForm collection=formCollection id=formId type=formType}}
 
-  <hr>
-
-  <a href="{{pathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a>
+  <ul>
+    {{#if ct.pathTo.index}}
+      <li><a href="{{pathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
+    {{/if}}
+  </ul>
 </template>
