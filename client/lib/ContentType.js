@@ -29,6 +29,9 @@ ContentType = function (options) {
   // Store reactive display state.
   this.displays = {};
 
+  // Define the default endpoints.
+  this.defaultEndpoints = ['index', 'created', 'read', 'update', 'delete'];
+
   // Store allowed values based on recieved options.
   this.options = {
     endpoints: options.endpoints || {},
@@ -109,6 +112,7 @@ ContentType.prototype._setEndPoint = function (endpoint, key) {
       var display = self.displays[key].get();
       var template = self._getTemplateDisplayName(key, templateWrapperOf, display);
 
+      self._setTemplateHooks(key, template, display);
       self._setTemplateHelpers(key, template, display);
       self._setTemplateEvents(key, template, display);
 
@@ -182,11 +186,42 @@ ContentType.prototype._setTemplateEvents = function (key, template, display) {
 }
 
 /**
- * Generates a new
- * @param  {[type]} key             [description]
- * @param  {[type]} templateWrapper [description]
- * @param  {[type]} display         [description]
- * @return {[type]}                 [description]
+ * Attach hooks to Display Templates.
+ *
+ * @param  {String} key      The Endpoint key.
+ * @param  {String} template The Meteor Template where we need to attach the events.
+ * @param  {String} display  The Display id.
+ */
+ContentType.prototype._setTemplateHooks = function (key, template, display) {
+  check(key, String);
+  check(template, String);
+  check(display, String);
+  check(Template[template], Blaze.Template);
+
+  var self = this;
+  var option  = self.options.endpoints[key];
+
+  // Extend display events based on recieved options.
+  if (!option || !Match.test(option.displays, Object))
+    return false;
+
+  if(Match.test(option.displays[display], Match.ObjectIncluding({onCreated: Function})))
+    Template[template].onCreated(option.displays[display].onCreated);
+
+  if(Match.test(option.displays[display], Match.ObjectIncluding({onRendered: Function})))
+    Template[template].onRendered(option.displays[display].onRendered);
+
+  if(Match.test(option.displays[display], Match.ObjectIncluding({onDestroyed: Function})))
+    Template[template].onDestroyed(option.displays[display].onDestroyed);
+}
+
+/**
+ * Generates a new Template based on default Template provided by theme package.
+ *
+ * @param  {String} key             The endpoint identifier.
+ * @param  {String} templateWrapper The Template name provided by theme package.
+ * @param  {String} display         The Display name.
+ * @return {String}                 The recently created Template name
  */
 ContentType.prototype._getTemplateDisplayName = function (key, templateWrapper, display) {
   check(key, String);
@@ -206,22 +241,9 @@ ContentType.prototype._getTemplateDisplayName = function (key, templateWrapper, 
   check(Template[copyOf].renderFunction, Function);
 
   // Duplicate the default template to make it Content Type specific.
-  Template[copyTo] = new Template(copyTo, Template[copyOf].renderFunction);
+  Template[copyTo] = new Template('Template.' + copyTo, Template[copyOf].renderFunction);
 
   return copyTo;
-}
-
-/**
- * Getter function to return a single endpoint data.
- *
- * @param  {String} key The endpoint identifier.
- * @return {Object}     A single endpoint data.
- */
-ContentType.prototype._getEndPoint = function (key) {
-  check(key, String);
-
-  var endpoints = this._getEndPoints();
-  return endpoints[key];
 }
 
 /**
