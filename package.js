@@ -1,7 +1,7 @@
 Package.describe({
   name: 'tooit:content-types',
-  summary: 'A Meteor package to easly define application document types.',
-  version: '0.0.6',
+  summary: 'A Meteor package to easly define application document types like Drupal content types.',
+  version: '0.0.7',
   git: 'https://github.com/tooit/meteor-content-types.git'
 });
 

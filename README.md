@@ -154,8 +154,12 @@ BooksCT = new ContentType({
 Out of the box, each Endpoint has an associated ``default`` Display. You could create new reusable Displays or set any custom Display to be loaded as default on every Endpoint.
 
 ```javascript
-var MyCustomChartDisplay = {
-  helpers: {
+var MyCustomChartsDisplay = {
+  onRendered: function (){}, // Adding Display Template onRendered hook.
+  onCreated: function (){}, // Adding Display Template onCreated hook.
+  onDeleted: function (){}, // Adding Display Template onDeleted hook.
+  events: {}, // Extending Display Template events by passing an eventMap.
+  helpers: { // Extending Display Template helpers.
     meta: {
       title: "Awesome Charts",
       summary: "Showing Book sales report for the last year."
@@ -183,6 +187,24 @@ BooksCT = new ContentType({
   }
 });
 ```
+
+We find ourselfs usually creating our custom Displays to extend some parts of the endpoints default behaviour. Because of that, we added the Template documentation as a start point of creating your new Displays by doing copy+pase from one of the defaults Display templates.
+
+- [CT_index_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_index_default)
+- [CT_index_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_index_default_default)
+- [CT_create_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_create_default)
+- [CT_create_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_create_default_default)
+- [CT_read_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_read_default)
+- [CT_read_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_read_default_default)
+- [CT_update_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_update_default)
+- [CT_update_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_update_default_default)
+- [CT_delete_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_delete_default)
+- [CT_delete_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_delete_default_default)
+
+For the complete Display Template documentation
+
+- [Bootstrap3 Theme](https://github.com/tooit/meteor-content-types-bootstrap3/blob/master/TEMPLATES_default.md#Introduction)
+- [Plain HTML Theme](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#Introduction)
 
 #### Template helpers and events
 
