@@ -155,7 +155,11 @@ Out of the box, each Endpoint has an associated ``default`` Display. You could c
 
 ```javascript
 var MyCustomChartsDisplay = {
-  helpers: {
+  onRendered: function (){}, // Adding Display Template onRendered hook.
+  onCreated: function (){}, // Adding Display Template onCreated hook.
+  onDeleted: function (){}, // Adding Display Template onDeleted hook.
+  events: {}, // Extending Display Template events by passing an eventMap.
+  helpers: { // Extending Display Template helpers.
     meta: {
       title: "Awesome Charts",
       summary: "Showing Book sales report for the last year."
