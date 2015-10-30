@@ -91,9 +91,15 @@ ContentType.prototype._setEndPoint = function (endpoint, key) {
   check(ContentTypes.settings.router, String);
 
   var self = this;
-  var templatePrefix = ContentTypes.settings.templatePrefix[key];
+  var templatePrefix = self._getTemplatePrefix(key);
   var templateWrapperOf = templatePrefix+"_"+self._theme;
   var templateWrapperTo =  templatePrefix+"_"+self._theme+"_"+self._ctid;
+
+  //hack for new endpoints and missing template wrappers
+  //use a copy of an already defined wrapper
+  if(!Match.test(Template[templateWrapperOf], Blaze.Template)) {
+    templateWrapperOf = self._getTemplatePrefix('index') + "_" + self._theme;
+  }
 
   // Fallback when the theme wrapper was not implemented.
   // Should never happend but just in case.
@@ -101,6 +107,9 @@ ContentType.prototype._setEndPoint = function (endpoint, key) {
   check(Template[templateWrapperOf].renderFunction, Function);
 
   Template[templateWrapperTo] = new Template(templateWrapperTo, Template[templateWrapperOf].renderFunction);
+
+  //rollback
+  templateWrapperOf = templatePrefix+"_"+self._theme;
 
   // Once we are sure the template wrapper exist, we build the route
   // with a reactive template name to allow realtime display update.
@@ -127,6 +136,36 @@ ContentType.prototype._setEndPoint = function (endpoint, key) {
       // @todo: add support for Flow Router.
       break;
   }
+}
+
+/**
+ * Generates a new
+ * @param  {[type]} key             [description]
+ * @param  {[type]} templateWrapper [description]
+ * @param  {[type]} display         [description]
+ * @return {[type]}                 [description]
+ */
+ContentType.prototype._getTemplateDisplayName = function (key, templateWrapper, display) {
+  check(key, String);
+  check(templateWrapper, String);
+  check(display, String);
+
+  var self = this;
+  var copyOf  = templateWrapper+'_'+display;
+  var copyTo  = templateWrapper+'_'+display+'_'+self._ctid;
+
+  // Verify that origin template exists but if not we provide
+  // default display as fallback.
+  if(!Match.test(Template[copyOf], Blaze.Template)){
+    copyOf = templateWrapper +'_default';
+  }
+
+  check(Template[copyOf].renderFunction, Function);
+
+  // Duplicate the default template to make it Content Type specific.
+  Template[copyTo] = new Template(copyTo, Template[copyOf].renderFunction);
+
+  return copyTo;
 }
 
 /**
@@ -184,31 +223,19 @@ ContentType.prototype._setTemplateEvents = function (key, template, display) {
 /**
  * Generates a new
  * @param  {[type]} key             [description]
- * @param  {[type]} templateWrapper [description]
- * @param  {[type]} display         [description]
  * @return {[type]}                 [description]
  */
-ContentType.prototype._getTemplateDisplayName = function (key, templateWrapper, display) {
+ContentType.prototype._getTemplatePrefix = function (key) {
   check(key, String);
-  check(templateWrapper, String);
-  check(display, String);
 
-  var self = this;
-  var copyOf  = templateWrapper+'_'+display;
-  var copyTo  = templateWrapper+'_'+display+'_'+self._ctid;
-
-  // Verify that origin template exists but if not we provide
-  // default display as fallback.
-  if(!Match.test(Template[copyOf], Blaze.Template)){
-    copyOf = templateWrapper+'_default';
+  // Verify that origin template prefix exists but if not we provide
+  // a default one.
+  if(Match.test(ContentTypes.settings.templatePrefix[key], String)){
+    return ContentTypes.settings.templatePrefix[key];
+  } else {
+    //used name convention used in templatePrefix
+    return 'CT_' + key;
   }
-
-  check(Template[copyOf].renderFunction, Function);
-
-  // Duplicate the default template to make it Content Type specific.
-  Template[copyTo] = new Template(copyTo, Template[copyOf].renderFunction);
-
-  return copyTo;
 }
 
 /**
@@ -232,6 +259,14 @@ ContentType.prototype._getEndPoint = function (key) {
  */
 ContentType.prototype._getEndPoints = function () {
   var self = this;
+
+  var defaultEndpointProperties = {
+    enabled: true,
+    display: 'default',
+    displays: {
+      default: {}
+    }
+  }
 
   var endpoints = {
     index: {
@@ -281,11 +316,12 @@ ContentType.prototype._getEndPoints = function () {
     }
   }
 
-  // @todo: check if this is still usefull.
+  // Extend default endpoints based on received options.
   _.each(self.options.endpoints, function (endpoint, key) {
-    if (Match.test(endpoint.enabled, Boolean)){
-      endpoints[key].enabled = endpoint.enabled;
+    if (_.isUndefined(endpoints[key])){
+      endpoints[key] = {};
     }
+    endpoints[key] = _.extend(endpoints[key], defaultEndpointProperties, endpoint);
   });
 
   return endpoints;
@@ -356,6 +392,11 @@ ContentType.prototype._getTemplateHelpers = function (key) {
     }
   };
 
+  //initialize helpers for custom endpoints
+    if (_.isUndefined(helpers[key])){
+    helpers[key] = {};
+  }
+
   // Helpers common to all templates.
   helpers[key].ct = {
     fields: self._getSimpleSchemaFields(),
@@ -390,6 +431,11 @@ ContentType.prototype._getTemplateEvents = function (key) {
     update: {},
     delete: {}
   };
+
+  //initialize events for custom endpoints
+    if (_.isUndefined(events[key])){
+    events[key] = {};
+  }
 
   return events[key];
 }
