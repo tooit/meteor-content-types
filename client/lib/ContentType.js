@@ -75,7 +75,7 @@ ContentType.prototype.initialize = function () {
 }
 
 /**
- * Builds the router route for each endpoint
+ * Builds the router route for each endpoint.
  *
  * @param {String} key      The endpoint key.
  * @param {Object} endpoint The endpoint settings.
@@ -100,11 +100,13 @@ ContentType.prototype._setEndpointRoute = function (endpoint, key) {
       self.routes[key] = Router.route(endpoint.path, {
         name: endpoint.name,
         onBeforeAction: function () {
-          // create template wrapper on demand
+          // Create the template wrapper on demand.
           var tpl = self._getEndpointTemplateWrapperName(endpoint, key)
           this.template = tpl;
-          // callback for user defined before actions
-          endpoint.before();
+          // Callback for user defined before actions.
+          if(Match.test(endpoint.before, Function)){
+            endpoint.before();
+          }
           this.next();
         },
         // @todo: user must have wrappers to each router hook
@@ -180,31 +182,40 @@ ContentType.prototype._getEndpointTemplateDisplayName = function (key, templateW
   check(templateWrapper, String);
   check(display, String);
 
-  var self = this,
-    defaultTemplateDisplay =   "CT_" + key + "_" + self._theme + '_default',
-    supposedTemplateDisplay =   "CT_" + key + "_" + self._theme + '_' + display,
-    notDefinedTemplateDisplay =   "CT_undefined_" + self._theme + '_default',
-    copyOf = null,
-    templateDisplay = null;
+  var self = this;
+  var displayDefault = "CT_" + key + "_" + self._theme + '_default';
+  var displaySuggestion = "CT_" + key + "_" + self._theme + '_' + display;
+  var displayNotFound = "CT_notfound_" + self._theme + '_default';
+  var copyOf = null;
+  var templateDisplay = null;
+  var helperNotFound = null;
 
-  // Verify that origin template exists but if not we provide
-  // default display as fallback.
-  if(Match.test(Template[supposedTemplateDisplay], Blaze.Template)){
-    copyOf = supposedTemplateDisplay;
-  } else if(Match.test(Template[defaultTemplateDisplay], Blaze.Template)){
-    copyOf = defaultTemplateDisplay;
+  if(Match.test(Template[displaySuggestion], Blaze.Template)){
+    // If display suggestion exists, we create the content type specific
+    // display template from it.
+    copyOf = displaySuggestion;
+  } else if(Match.test(Template[displayDefault], Blaze.Template)){
+    // If no display suggestion exists, we look if the default content type
+    // specific display template exists.
+    copyOf = displayDefault;
   } else {
-    // user forgot to create a display for the new endpoint
-    copyOf = notDefinedTemplateDisplay;
+    // If no display suggestion or default template exists, we render a notfound
+    // template attached to DOM as a fallback.
+    copyOf = displayNotFound;
+    helperNotFound = displaySuggestion;
   }
   check(Template[copyOf].renderFunction, Function);
 
-
-  // @todo: for custom displays is not necessary to make a new copy
+  // @todo: for custom displays is not necessary to make a new copy.
 
   // Duplicate the default template to make it Content Type specific.
   templateDisplay = copyOf + "_" + self._ctid;
   Template[templateDisplay] = new Template('Template.' + templateDisplay, Template[copyOf].renderFunction);
+
+  // Display the suggestion display template on DOM.
+  if (Match.test(helperNotFound, String)){
+    Template[templateDisplay].helpers({suggestion: helperNotFound, endpoint: key});
+  }
 
   return templateDisplay;
 }
@@ -262,7 +273,7 @@ ContentType.prototype._setTemplateEvents = function (key, template, display) {
 }
 
 /**
- * Attach hooks to Display Templates.
+ * Attach Blaze hooks to Display Templates.
  *
  * @param  {String} key      The Endpoint key.
  * @param  {String} template The Meteor Template where we need to attach the events.
@@ -293,9 +304,10 @@ ContentType.prototype._setTemplateHooks = function (key, template, display) {
 
 /**
  * Store the out-of-the-box Index + CRUD endpoint esqueleton. The object
- * returned here will be used to build the Router routes.
+ * returned here will be used to build the Router routes. This function also
+ * extend default values with provided ones at constructor level.
  *
- * @return {Object} The basic information needed to build the routes.
+ * @return {Object} The basic endpoint information needed to build the routes.
  */
 ContentType.prototype._getEndPoints = function () {
   var self = this;
@@ -364,7 +376,7 @@ ContentType.prototype._getEndPoints = function () {
 
   // Extend default endpoints based on received options.
   _.each(self.options.endpoints, function (endpoint, key) {
-    if (_.isUndefined(endpoints[key])){
+    if (!Match.test(endpoints[key], Object)){
       endpoints[key] = {};
     }
     endpoints[key] = _.extend(endpoints[key], defaultEndpointProperties, endpoint);
@@ -374,10 +386,10 @@ ContentType.prototype._getEndPoints = function () {
 }
 
 /**
- * Provide default helpers for Content Type templates.
+ * Provide default helpers for Content Type Display templates.
  *
- * @param  {String} key The endpoint identifier.
- * @return {Object}     Meteor template helpers.
+ * @param  {String} key   The endpoint identifier.
+ * @return {Object}       Meteor template helpers.
  */
 ContentType.prototype._getTemplateHelpers = function (key) {
   check(key, String);
@@ -438,8 +450,8 @@ ContentType.prototype._getTemplateHelpers = function (key) {
     }
   };
 
-  //initialize helpers for custom endpoints
-    if (_.isUndefined(helpers[key])){
+  // Initialize display template helpers for custom endpoints.
+  if (!Match.test(helpers[key], Object)){
     helpers[key] = {};
   }
 

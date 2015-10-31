@@ -12,10 +12,14 @@ A Meteor package for easily define application document types. The main goal of 
 - [Guide](https://github.com/tooit/meteor-content-types/blob/master/README.md#guide)
   - [Endpoints and Displays](https://github.com/tooit/meteor-content-types/blob/master/README.md#endpoints-and-displays)
     - [Endpoints](https://github.com/tooit/meteor-content-types/blob/master/README.md#endpoints)
+    - [Create your own Endpoints](https://github.com/tooit/meteor-content-types/blob/master/README.md#create-your-own-endpoints)
     - [Displays](https://github.com/tooit/meteor-content-types/blob/master/README.md#displays)
+    - [Create your own Displays](https://github.com/tooit/meteor-content-types/blob/master/README.md#create-your-own-displays)
     - [Template helpers and events](https://github.com/tooit/meteor-content-types/blob/master/README.md#template-helpers-and-events)
     - [Labels](https://github.com/tooit/meteor-content-types/blob/master/README.md#labels)
+- [How this package works](https://github.com/tooit/meteor-content-types/blob/master/README.md#how-this-package-works)
 - [Example Applications](https://github.com/tooit/meteor-content-types/blob/master/README.md#example-applications)
+- [Result of using this package](https://github.com/tooit/meteor-content-types/blob/master/README.md#result-of-using-this-package)
 
 ## Why this package
 
@@ -131,7 +135,14 @@ BooksCT = new ContentType({
   ctid: "book"
   endpoints: {
     index: {
-      enabled: true, // you don't need to specify this key since ``true`` is the default value for all endpoints.
+      enabled: true, // Default endpoints are enabled by default.
+      name: 'ct.my-super-admin-app.index', // The route name, usefull for using on templates.
+      path: '/my-super-admin-app/index', // The route path.
+      before: function() { return; }, // A before action callback for the route.
+      display: 'default', // The default display.
+      displays: { // The list of Displays associated with this endpoint. See Displays below.
+        default: {}
+      }
     },
     create: {
       enabled: true
@@ -149,9 +160,76 @@ BooksCT = new ContentType({
 });
 ```
 
+#### Create your own Endpoints
+
+As you know, Index+CRUD are not everything in applications. You need to create custom views, filters, checkout pages, and so on...
+
+For these use cases, you could create your own Endpoints and write the app focused on the application structure instead of having files everywhere in big folders trees. For example:
+
+```javascript
+BooksCT = new ContentType({
+  collection: Books,
+  ctid: "book",
+  endpoints: {
+    books: {
+      path: 'books',
+      name: 'books',
+      displays: {
+        default: {
+          helpers: {
+            items: function () {
+              var cursor = Books.find({});
+              return {
+                cursor: cursor,
+                total: cursor.count()
+              };
+            }
+          },
+          events: {
+            'click .book-view-detail': function (event) {
+              Router.go('books.purchase', {_id: this._id});
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+This will create Index+CRUD endpoints plus a custom endpoint ``books`` in the path ``/books`` with a list of books and some template events.
+
+In addition, the rendering route process will search the template called ``CT_books_default_default`` that you could implement somewhere in your app and will create a duplicated version of that template called ``CT_books_default_default_book``.
+
+These duplicated versions are created only when someone access the route so you don't have to worry about having a lot of template instances out there that nobody uses.
+
 #### Displays
 
-Out of the box, each Endpoint has an associated ``default`` Display. You could create new reusable Displays or set any custom Display to be loaded as default on every Endpoint.
+Out of the box, each Endpoint has an associated ``default`` Display. You could extend any display:
+
+```javascript
+TasksCT = new ContentType({
+  collection: Tasks,
+  ctid: "task",
+  endpoints: {
+    index: {
+      displays: {
+        default: {
+          helpers: {
+            meta: {
+              title: "This is my cool title."
+            }
+          }
+        }
+      }
+    }
+  }
+});
+```
+
+#### Create yout own Displays
+
+You could create new reusable Displays or set any custom Display to be loaded as default on every Endpoint.
 
 ```javascript
 var MyCustomChartsDisplay = {
@@ -188,7 +266,7 @@ BooksCT = new ContentType({
 });
 ```
 
-We find ourselfs usually creating our custom Displays to extend some parts of the endpoints default behaviour. Because of that, we added the Template documentation as a start point of creating your new Displays by doing copy+pase from one of the defaults Display templates.
+We find ourselfs usually creating our custom Displays to extend some parts of the endpoints default behaviour. Because of that, we added the Template documentation as a start point of creating your own Displays by doing copy+pase from one of the defaults Display templates.
 
 - [CT_index_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_index_default)
 - [CT_index_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_index_default_default)
@@ -262,8 +340,108 @@ BooksCT = new ContentType({
 });
 ```
 
+## How this package works
+
+When the constructor is called to build a new Content Type, the following steps will be run.
+
+- Constructor:
+  - Checks for mandatory options.
+  - Setup default or extended values for ``_ctid``, ``_theme``, ``_basePath`` and ``_collection`` among others.
+  - Run Content Type initialize procedure.
+
+- Initializer:
+  - Loop over default and extended endpoints (index, create, read, update and delete).
+  - Check if each endpoint is enabled.
+  - Initialize a ``ReactiveVar`` using the Display name specified at constructor level or the String 'default' if none is provided.
+  - Router route setup.
+
+- Router route:
+  - Checks valid function arguments.
+  - Switch based on router (iron-router or flow-router support).
+  - Setup the route using ``endpoint.path``, ``endpoint.name`` and the regarding "before" (``onBeforeAction`` or ``triggersEnter``) hook (we do this by performance reasons to avoid creating content type templates not being used by never used or private routes).
+    - Inside "before" hook, we create a new instance of the endpoint wrapper template attaching the ctid to create an unique template for every content type. This wrapper uses the Display ReactiveVar to allow rendering multiple template into the same route or url.
+    - Inside the endpoint wrapper template helper, we copy a base Display template with extended helpers, events and hooks specified at constructor level.
+
+- Notes:
+  - If when creating new endpoints, you don't specify the wrapper template, the template CT_notfound_[theme]_default will be used to print a message on the rendered DOM.
+
+Please, if reading this you consider that the design could be improved in any way, don't be shy and submit a new issue. :)
+
 ## Example Applications
 
-- [Basic](http://content-types-example.meteor.com/)
 - [Bootstrap Theme](http://content-types-example-bootstrap.meteor.com/)
 - [Materialize Theme](http://content-types-example-materialize.meteor.com/)
+- [Basic Theme](http://content-types-example.meteor.com/)
+
+## Result of using this package
+
+Using this package let us for example to create the skeleton of a Book Store and its Administrative interface in 66 lines of javascript and in a readable and portable structure. Thanks for reading! ;)
+
+```javascript
+BooksCT = new ContentType({
+  collection: Books,
+  ctid: "book",
+  endpoints: {
+    books: {
+      path: 'books',
+      name: 'books',
+      displays: {
+        default: {
+          helpers: {
+            items: function () {
+              var cursor = Books.find({});
+              return {
+                cursor: cursor,
+                total: cursor.count()
+              };
+            }
+          },
+          events: {
+            'click .book-view-detail': function (event) {
+              Router.go('books.purchase', {_id: this._id});
+            }
+          }
+        }
+      }
+    },
+    book_purchase: {
+      path: 'books/purchase/:_id',
+      name: 'books.purchase',
+      displays: {
+        default: {
+          helpers: {
+            item: function () {
+              var router = Router.current();
+              return Books.findOne({_id:router.params._id});
+            }
+          },
+          events: {
+            'click .goto-checkout': function (event) {
+              alert("I'm doing a checkout from the Book default display.");
+            },
+            'click .goto-detail': function (event) {
+              BooksCT.setDisplay('book_purchase', 'full');
+            }
+          }
+        },
+        full: {
+          helpers: {
+            item: function () {
+              var router = Router.current();
+              return Books.findOne({_id:router.params._id});
+            }
+          },
+          events: {
+            'click .goto-checkout': function (event) {
+              alert("I'm doing a checkout from the Book full display.");
+            },
+            'click .goto-default': function (event) {
+              BooksCT.setDisplay('book_purchase', 'default');
+            }
+          }
+        }
+      }
+    }
+  }
+});
+```

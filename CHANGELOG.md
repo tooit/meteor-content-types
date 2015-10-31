@@ -1,3 +1,18 @@
+# v0.0.8
+
+- allow to setup new endpoints
+- implemented content type initialization on demand (router before action)
+- merged default endpoint template wrapper (now, all wrappers uses the template CT_default_default at _wrapper.html)
+- added better error message with template suggestions when adding new endpoints without specifing a default display
+- updated documentation for README.md
+- updated source code comments
+- replaced underscore checks by Match.test
+
+# v0.0.7
+
+- added support for hooks onCreated, onDestroyed and onRendered hooks for Display Template
+- updated documentation for README.md
+
 # v0.0.6
 
 - added display feature (https://trello.com/c/kkiPiZXY)
