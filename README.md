@@ -2,6 +2,8 @@
 
 A Meteor package for easily define application document types. The main goal of this package is to provide the [Drupal](http://www.drupal.org/)'s content type and display architecture in a Meteor way.
 
+If you're familiar with *"Sometimes you gotta run before you can walk."* by Tony Stark (Former CEO of Stark Industries), jump to: [Result of using this package](https://github.com/tooit/meteor-content-types/blob/master/README.md#result-of-using-this-package).
+
 ## Table of Contents
 
 - [Why this package](https://github.com/tooit/meteor-content-types/blob/master/README.md#why-this-package)
@@ -227,7 +229,7 @@ TasksCT = new ContentType({
 });
 ```
 
-#### Create yout own Displays
+#### Create your own Displays
 
 You could create new reusable Displays or set any custom Display to be loaded as default on every Endpoint.
 
