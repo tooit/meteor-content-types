@@ -27,6 +27,7 @@ Package.onUse(function(api) {
     'client/lib/ContentType.js',
     'client/lib/ContentTypes.js',
     'client/lib/UIHelpers.js',
+    'client/templates/default/_wrapper.html',
     'client/templates/default/index.html',
     'client/templates/default/create.html',
     'client/templates/default/read.html',
