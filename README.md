@@ -377,7 +377,7 @@ Please, if reading this you consider that the design could be improved in any wa
 
 ## Result of using this package
 
-Using this package let us for example to create the skeleton of a Book Store and its Administrative interface in 66 lines of javascript and in a readable and portable structure. Thanks for reading! ;)
+Using this package let us for example create the skeleton of a Book Store and its Administrative interface in 66 lines of javascript, 42 lines of HTML and in a readable and portable structure. Thanks for reading! ;)
 
 ```javascript
 BooksCT = new ContentType({
@@ -447,3 +447,50 @@ BooksCT = new ContentType({
   }
 });
 ```
+
+```handlebars
+<template name="CT_book_purchase_default_default">
+  <a href="{{pathFor route='books'}}">Back to Book Store</a>
+  {{#with item}}
+    <h1>Purchase {{title}}</h1>
+    <small>By {{author}}</small><br>
+    <button class="goto-detail">View Full Detail</button>
+    <button class="goto-checkout">Buy this item</button>
+  {{/with}}
+</template>
+<template name="CT_book_purchase_default_full">
+  <a href="{{pathFor route='books'}}">Back to Book Store</a>
+  {{#with item}}
+    <h1>Purchase {{title}}</h1>
+    <h2>{{summary}}</h2>
+    <h3>By {{author}}</h3>
+    <ul>
+      <li><strong>Last Checked Out</strong>: {{lastCheckedOut}}</li>
+      <li><strong>Copies</strong>: {{copies}}</li>
+    </ul>
+    <button class="goto-default">Hide Full Detail</button>
+    <button class="goto-checkout">Buy this item</button>
+  {{/with}}
+</template>
+<template name="CT_books_default_default">
+  {{#with meta}}
+    {{#if title}}<h2>{{{title}}}</h2>{{/if}}
+    <hr/>
+  {{/with}}
+  {{#with items}}
+    {{#if total}}
+      {{#each cursor}}
+        <h1>{{title}}</h1>
+        <small>By {{author}}</small><br>
+        <button class="book-view-detail">View More</button>
+        <hr>
+      {{/each}}
+      <p>You can purchase {{total}} books.</p>
+    {{else}}
+      <p>No books where found.</p>
+    {{/if}}
+  {{/with}}
+</template>
+```
+
+See [Frontend](http://content-types-example.meteor.com/books) and [Backend](http://content-types-example.meteor.com/admin/content/book/index)
