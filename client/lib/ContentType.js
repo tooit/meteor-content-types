@@ -69,24 +69,24 @@ ContentType.prototype.initialize = function () {
       self.displays[key] = new ReactiveVar(defaultDisplay);
 
       // Creates the Router routes for each Index+CRUD endpoint.
-      self._setEndPoint(endpoint, key);
+      self._setEndpointRoute(endpoint, key);
     }
   });
 }
 
 /**
- * Builds the router route, the wrapper template and set the reactive
- * helper used by the wrapper template to allow reactive display update.
+ * Builds the router route for each endpoint
  *
  * @param {String} key      The endpoint key.
  * @param {Object} endpoint The endpoint settings.
  */
-ContentType.prototype._setEndPoint = function (endpoint, key) {
+ContentType.prototype._setEndpointRoute = function (endpoint, key) {
   check(endpoint, {
     enabled:    Boolean,
-    display:    String,
-    path:       String,
     name:       String,
+    path:       String,
+    before:     Function,
+    display:    String,
     displays:   Object
   });
 
@@ -94,52 +94,119 @@ ContentType.prototype._setEndPoint = function (endpoint, key) {
   check(ContentTypes.settings.router, String);
 
   var self = this;
-  var templatePrefix = self._getTemplatePrefix(key);
-  var templateWrapperOf = templatePrefix+"_"+self._theme;
-  var templateWrapperTo =  templatePrefix+"_"+self._theme+"_"+self._ctid;
-
-  //hack for new endpoints and missing template wrappers
-  //use a copy of an already defined wrapper
-  if(!Match.test(Template[templateWrapperOf], Blaze.Template)) {
-    templateWrapperOf = self._getTemplatePrefix('index') + "_" + self._theme;
-  }
-
-  // Fallback when the theme wrapper was not implemented.
-  // Should never happend but just in case.
-  check(Template[templateWrapperOf], Blaze.Template);
-  check(Template[templateWrapperOf].renderFunction, Function);
-
-  Template[templateWrapperTo] = new Template(templateWrapperTo, Template[templateWrapperOf].renderFunction);
-
-  //rollback
-  templateWrapperOf = templatePrefix+"_"+self._theme;
-
-  // Once we are sure the template wrapper exist, we build the route
-  // with a reactive template name to allow realtime display update.
-  Template[templateWrapperTo].helpers({
-    template: function () {
-      var display = self.displays[key].get();
-      var template = self._getTemplateDisplayName(key, templateWrapperOf, display);
-
-      self._setTemplateHooks(key, template, display);
-      self._setTemplateHelpers(key, template, display);
-      self._setTemplateEvents(key, template, display);
-
-      return template;
-    }
-  });
 
   switch (ContentTypes.settings.router) {
     case 'iron_router':
       self.routes[key] = Router.route(endpoint.path, {
         name: endpoint.name,
-        template: templateWrapperTo
+        onBeforeAction: function () {
+          // create template wrapper on demand
+          var tpl = self._getEndpointTemplateWrapperName(endpoint, key)
+          this.template = tpl;
+          // callback for user defined before actions
+          endpoint.before();
+          this.next();
+        },
+        // @todo: user must have wrappers to each router hook
       });
       break;
     case 'flow_router':
       // @todo: add support for Flow Router.
       break;
   }
+}
+
+/**
+ * Builds the  wrapper template and set the reactive
+ * helper used by the wrapper template to allow reactive display update.
+ *
+ * @param {String} key      The endpoint key.
+ * @param {Object} endpoint The endpoint settings.
+ */
+ContentType.prototype._getEndpointTemplateWrapperName = function (endpoint, key) {
+  check(endpoint, {
+    enabled:    Boolean,
+    name:       String,
+    path:       String,
+    before:     Function,
+    display:    String,
+    displays:   Object
+  });
+
+  check(key, String);
+  check(ContentTypes.settings.router, String);
+
+  var self = this;
+
+  var defaultTemplateWrapper = 'CT_default_default';
+  var templateWrapper =  "CT_" + key + "_" + self._theme + "_" + self._ctid;
+
+  // Fallback when the theme wrapper was not implemented.
+  // Should never happend but just in case.
+  check(Template[defaultTemplateWrapper], Blaze.Template);
+  check(Template[defaultTemplateWrapper].renderFunction, Function);
+
+  Template[templateWrapper] = new Template(templateWrapper, Template[defaultTemplateWrapper].renderFunction);
+
+  // @todo: permit the user to define custom wrappers
+
+  // Once we are sure the template wrapper exist, we build the route
+  // with a reactive template name to allow realtime display update.
+  Template[templateWrapper].helpers({
+    template: function () {
+      var display = self.displays[key].get();
+      var template = self._getEndpointTemplateDisplayName(key, templateWrapper, display);
+
+      self._setTemplateHooks(key, template, display);
+      self._setTemplateHelpers(key, template, display);
+      self._setTemplateEvents(key, template, display);
+      return template;
+    }
+  });
+
+  return templateWrapper;
+}
+
+/**
+ * Generates a new Template based on default Template provided by theme package.
+ *
+ * @param  {String} key             The endpoint identifier.
+ * @param  {String} templateWrapper The Template name provided by theme package.
+ * @param  {String} display         The Display name.
+ * @return {String}                 The recently created Template name
+ */
+ContentType.prototype._getEndpointTemplateDisplayName = function (key, templateWrapper, display) {
+  check(key, String);
+  check(templateWrapper, String);
+  check(display, String);
+
+  var self = this,
+    defaultTemplateDisplay =   "CT_" + key + "_" + self._theme + '_default',
+    supposedTemplateDisplay =   "CT_" + key + "_" + self._theme + '_' + display,
+    notDefinedTemplateDisplay =   "CT_undefined_" + self._theme + '_default',
+    copyOf = null,
+    templateDisplay = null;
+
+  // Verify that origin template exists but if not we provide
+  // default display as fallback.
+  if(Match.test(Template[supposedTemplateDisplay], Blaze.Template)){
+    copyOf = supposedTemplateDisplay;
+  } else if(Match.test(Template[defaultTemplateDisplay], Blaze.Template)){
+    copyOf = defaultTemplateDisplay;
+  } else {
+    // user forgot to create a display for the new endpoint
+    copyOf = notDefinedTemplateDisplay;
+  }
+  check(Template[copyOf].renderFunction, Function);
+
+
+  // @todo: for custom displays is not necessary to make a new copy
+
+  // Duplicate the default template to make it Content Type specific.
+  templateDisplay = copyOf + "_" + self._ctid;
+  Template[templateDisplay] = new Template('Template.' + templateDisplay, Template[copyOf].renderFunction);
+
+  return templateDisplay;
 }
 
 /**
@@ -225,55 +292,6 @@ ContentType.prototype._setTemplateHooks = function (key, template, display) {
 }
 
 /**
- * Generates a new Template based on default Template provided by theme package.
- *
- * @param  {String} key             The endpoint identifier.
- * @param  {String} templateWrapper The Template name provided by theme package.
- * @param  {String} display         The Display name.
- * @return {String}                 The recently created Template name
- */
-ContentType.prototype._getTemplateDisplayName = function (key, templateWrapper, display) {
-  check(key, String);
-  check(templateWrapper, String);
-  check(display, String);
-
-  var self = this;
-  var copyOf  = templateWrapper+'_'+display;
-  var copyTo  = templateWrapper+'_'+display+'_'+self._ctid;
-
-  // Verify that origin template exists but if not we provide
-  // default display as fallback.
-  if(!Match.test(Template[copyOf], Blaze.Template)){
-    copyOf = templateWrapper+'_default';
-  }
-
-  check(Template[copyOf].renderFunction, Function);
-
-  // Duplicate the default template to make it Content Type specific.
-  Template[copyTo] = new Template('Template.' + copyTo, Template[copyOf].renderFunction);
-
-  return copyTo;
-}
-
-/**
- * Generates a new
- * @param  {[type]} key             [description]
- * @return {[type]}                 [description]
- */
-ContentType.prototype._getTemplatePrefix = function (key) {
-  check(key, String);
-
-  // Verify that origin template prefix exists but if not we provide
-  // a default one.
-  if(Match.test(ContentTypes.settings.templatePrefix[key], String)){
-    return ContentTypes.settings.templatePrefix[key];
-  } else {
-    //used name convention used in templatePrefix
-    return 'CT_' + key;
-  }
-}
-
-/**
  * Store the out-of-the-box Index + CRUD endpoint esqueleton. The object
  * returned here will be used to build the Router routes.
  *
@@ -284,6 +302,7 @@ ContentType.prototype._getEndPoints = function () {
 
   var defaultEndpointProperties = {
     enabled: true,
+    before: function() { return; },
     display: 'default',
     displays: {
       default: {}
@@ -293,45 +312,50 @@ ContentType.prototype._getEndPoints = function () {
   var endpoints = {
     index: {
       enabled: true,
-      display: 'default',
-      path: self._basePath+'/'+self._ctid+'/index',
       name: 'ct.'+self._ctid+'.index',
+      path: self._basePath+'/'+self._ctid+'/index',
+      before: function() { return; },
+      display: 'default',
       displays: {
         default: {}
       }
     },
     create: {
       enabled: true,
-      display: 'default',
-      path: this._basePath+'/'+this._ctid+'/create',
       name: 'ct.'+this._ctid+'.create',
+      path: this._basePath+'/'+this._ctid+'/create',
+      before: function() { return; },
+      display: 'default',
       displays: {
         default: {}
       }
     },
     read: {
       enabled: true,
-      display: 'default',
-      path: this._basePath+'/'+this._ctid+'/:_id',
       name: 'ct.'+this._ctid+'.read',
+      path: this._basePath+'/'+this._ctid+'/:_id',
+      before: function() { return; },
+      display: 'default',
       displays: {
         default: {}
       }
     },
     update: {
       enabled: true,
-      display: 'default',
-      path: this._basePath+'/'+this._ctid+'/:_id/edit',
       name: 'ct.'+this._ctid+'.update',
+      path: this._basePath+'/'+this._ctid+'/:_id/edit',
+      before: function() { return; },
+      display: 'default',
       displays: {
         default: {}
       }
     },
     delete: {
       enabled: true,
-      display: 'default',
-      path: this._basePath+'/'+this._ctid+'/:_id/delete',
       name: 'ct.'+this._ctid+'.delete',
+      path: this._basePath+'/'+this._ctid+'/:_id/delete',
+      before: function() { return; },
+      display: 'default',
       displays: {
         default: {}
       }
