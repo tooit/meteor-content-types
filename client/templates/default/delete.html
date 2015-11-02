@@ -16,14 +16,14 @@
   <ul>
     {{#with item}}
       {{#if ct.pathTo.read}}
-        <li><a href="{{pathFor route=ct.pathTo.read}}" title="{{ct.labels.linkView}}">{{ct.labels.linkView}}</a></li>
+        <li><a href="{{ctPathFor route=ct.pathTo.read _id=_id}}" title="{{ct.labels.linkView}}">{{ct.labels.linkView}}</a></li>
       {{/if}}
       {{#if ct.pathTo.update}}
-        <li><a href="{{pathFor route=ct.pathTo.update}}" title="{{ct.labels.linkEdit}}">{{ct.labels.linkEdit}}</a></li>
+        <li><a href="{{ctPathFor route=ct.pathTo.update _id=_id}}" title="{{ct.labels.linkEdit}}">{{ct.labels.linkEdit}}</a></li>
       {{/if}}
     {{/with}}
     {{#if ct.pathTo.index}}
-      <li><a href="{{pathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
+      <li><a href="{{ctPathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
     {{/if}}
   </ul>
 </template>

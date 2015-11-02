@@ -1,22 +1,19 @@
 /**
- * Literal object to store all defined Content Types.
+ * Define settings to be used for all Content Types.
  */
-ContentTypes = {
-  settings: {
-    // Set the kind of enabled router (iron_router or flow_router).
-    router: 'iron_router',
-
-    // Default template wrappers.
-    templatePrefix: {
-      index:  'CT_index',
-      create: 'CT_create',
-      read:   'CT_read',
-      update: 'CT_update',
-      delete: 'CT_delete'
-    }
+CT = function () {
+  this.settings = {
+    // The kind of enabled router (iron_router or flow_router).
+    router: 'flow_router'
   }
-};
+}
 
-ContentTypes.Configure = function (options) {
+CT.prototype.Configure = function (options) {
   this.settings = _.extend(this.settings, options);
 }
+
+CT.prototype.getSetting = function (key) {
+  return this.settings[key] || undefined;
+}
+
+ContentTypes = new CT();

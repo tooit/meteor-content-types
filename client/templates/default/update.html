@@ -13,14 +13,14 @@
   <ul>
     {{#with item}}
       {{#if ct.pathTo.read}}
-        <li><a href="{{pathFor route=ct.pathTo.read}}" title="{{ct.labels.linkView}}">{{ct.labels.linkView}}</a></li>
+        <li><a href="{{ctPathFor route=ct.pathTo.read _id=_id}}" title="{{ct.labels.linkView}}">{{ct.labels.linkView}}</a></li>
       {{/if}}
       {{#if ct.pathTo.create}}
-        <li><a href="{{pathFor route=ct.pathTo.create}}" title="{{ct.labels.linkCreate}}">{{ct.labels.linkCreate}}</a></li>
+        <li><a href="{{ctPathFor route=ct.pathTo.create _id=_id}}" title="{{ct.labels.linkCreate}}">{{ct.labels.linkCreate}}</a></li>
       {{/if}}
     {{/with}}
     {{#if ct.pathTo.index}}
-      <li><a href="{{pathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
+      <li><a href="{{ctPathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
     {{/if}}
   </ul>
 </template>

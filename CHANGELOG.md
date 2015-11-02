@@ -1,3 +1,10 @@
+# v0.0.9
+
+- added kadira:flow-router and kadira:blaze-layout as weak dependencies
+- updated iron-router to be a weak dependency
+- added layout option to be specified at Content type or endpoint level
+- added UI Helpers README.md and Source code documentation with examples
+
 # v0.0.8
 
 - allow to setup new endpoints
