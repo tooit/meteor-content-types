@@ -423,7 +423,7 @@ Please, if reading this you consider that the design could be improved in any wa
 
 ## Example Applications
 
-- [Bootstrap Theme](http://content-types-example-bootstrap.meteor.com/) (demo using kadira:flow-router)
+- [Bootstrap Theme](http://content-types-example-bootstrap3.meteor.com/) (demo using kadira:flow-router)
 - [Basic Theme](http://content-types-example.meteor.com/) (demo using iron:router)
 
 ## Result of using this package
