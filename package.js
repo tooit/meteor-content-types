@@ -1,20 +1,24 @@
 Package.describe({
   name: 'tooit:content-types',
   summary: 'A Meteor package to easly define application document types like Drupal content types.',
-  version: '0.0.8',
+  version: '0.0.9',
   git: 'https://github.com/tooit/meteor-content-types.git'
 });
 
 Package.onUse(function(api) {
   api.versionsFrom(['METEOR@0.9.3', 'METEOR@0.9.4', 'METEOR@1.0']);
 
+  api.use('kadira:flow-router@2.7.0', ['client'], {weak: true});
+  api.use('kadira:blaze-layout@2.2.0', ['client'], {weak: true});
+  api.use('iron:router@1.0.9', ['client'], {weak: true});
+
   var dependencies = [
     'templating',
     'check',
     'mongo',
+    'ejson',
     'reactive-var',
     'underscore@1.0.0',
-    'iron:router@1.0.9',
     'aldeed:simple-schema@1.3.2',
     'aldeed:collection2@2.0.0',
     'aldeed:autoform@5.7.1',

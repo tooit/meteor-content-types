@@ -17,6 +17,9 @@ ContentType = function (options) {
   // The kind of template to be used.
   this._theme = options.theme || 'default';
 
+  // The layout to be rendered as the wrapper view.
+  this._layout = options.layout || 'CT_layout';
+
   // Default path prefix (defined per content type).
   this._basePath = options.base_path || '/admin/content';
 
@@ -85,24 +88,25 @@ ContentType.prototype._setEndpointRoute = function (endpoint, key) {
     enabled:    Boolean,
     name:       String,
     path:       String,
+    layout:     String,
     before:     Function,
     display:    String,
     displays:   Object
   });
 
   check(key, String);
-  check(ContentTypes.settings.router, String);
+  check(ContentTypes.getSetting('router'), String);
 
   var self = this;
 
-  switch (ContentTypes.settings.router) {
+  switch (ContentTypes.getSetting('router')) {
     case 'iron_router':
       self.routes[key] = Router.route(endpoint.path, {
         name: endpoint.name,
+        layout: endpoint.layout,
         onBeforeAction: function () {
           // Create the template wrapper on demand.
-          var tpl = self._getEndpointTemplateWrapperName(endpoint, key)
-          this.template = tpl;
+          this.template = self._getEndpointTemplateWrapperName(endpoint, key);
           // Callback for user defined before actions.
           if(Match.test(endpoint.before, Function)){
             endpoint.before();
@@ -113,7 +117,20 @@ ContentType.prototype._setEndpointRoute = function (endpoint, key) {
       });
       break;
     case 'flow_router':
-      // @todo: add support for Flow Router.
+      var options = {
+        name: endpoint.name,
+        action: function () {
+          // Create the template wrapper on demand.
+          BlazeLayout.render(endpoint.layout, {
+            content: self._getEndpointTemplateWrapperName(endpoint, key)
+          });
+        }
+      };
+      // Callback for user defined before actions.
+      if(Match.test(endpoint.before, Function)){
+        options.triggersEnter = [endpoint.before];
+      }
+      FlowRouter.route(endpoint.path, options);
       break;
   }
 }
@@ -130,13 +147,14 @@ ContentType.prototype._getEndpointTemplateWrapperName = function (endpoint, key)
     enabled:    Boolean,
     name:       String,
     path:       String,
+    layout:     String,
     before:     Function,
     display:    String,
     displays:   Object
   });
 
   check(key, String);
-  check(ContentTypes.settings.router, String);
+  check(ContentTypes.getSetting('router'), String);
 
   var self = this;
 
@@ -314,6 +332,7 @@ ContentType.prototype._getEndPoints = function () {
 
   var defaultEndpointProperties = {
     enabled: true,
+    layout: self._layout,
     before: function() { return; },
     display: 'default',
     displays: {
@@ -326,6 +345,7 @@ ContentType.prototype._getEndPoints = function () {
       enabled: true,
       name: 'ct.'+self._ctid+'.index',
       path: self._basePath+'/'+self._ctid+'/index',
+      layout: self._layout,
       before: function() { return; },
       display: 'default',
       displays: {
@@ -336,6 +356,7 @@ ContentType.prototype._getEndPoints = function () {
       enabled: true,
       name: 'ct.'+this._ctid+'.create',
       path: this._basePath+'/'+this._ctid+'/create',
+      layout: self._layout,
       before: function() { return; },
       display: 'default',
       displays: {
@@ -346,6 +367,7 @@ ContentType.prototype._getEndPoints = function () {
       enabled: true,
       name: 'ct.'+this._ctid+'.read',
       path: this._basePath+'/'+this._ctid+'/:_id',
+      layout: self._layout,
       before: function() { return; },
       display: 'default',
       displays: {
@@ -356,6 +378,7 @@ ContentType.prototype._getEndPoints = function () {
       enabled: true,
       name: 'ct.'+this._ctid+'.update',
       path: this._basePath+'/'+this._ctid+'/:_id/edit',
+      layout: self._layout,
       before: function() { return; },
       display: 'default',
       displays: {
@@ -366,6 +389,7 @@ ContentType.prototype._getEndPoints = function () {
       enabled: true,
       name: 'ct.'+this._ctid+'.delete',
       path: this._basePath+'/'+this._ctid+'/:_id/delete',
+      layout: self._layout,
       before: function() { return; },
       display: 'default',
       displays: {
@@ -572,12 +596,12 @@ ContentType.prototype.setDisplay = function (key, display) {
 ContentType.prototype.currentRoute = function () {
   var current = false;
 
-  switch (ContentTypes.settings.router) {
+  switch (ContentTypes.getSetting('router')) {
     case 'iron_router':
       current = Router.current();
       break;
     case 'flow_router':
-      current = Router.current();
+      current = FlowRouter.current();
       break;
   }
   return current;

@@ -7,6 +7,7 @@ If you're familiar with *"Sometimes you gotta run before you can walk."* by Tony
 ## Table of Contents
 
 - [Why this package](https://github.com/tooit/meteor-content-types/blob/master/README.md#why-this-package)
+- [Requirements](https://github.com/tooit/meteor-content-types/blob/master/README.md#requirements)
 - [Install](https://github.com/tooit/meteor-content-types/blob/master/README.md#install)
 - [Features](https://github.com/tooit/meteor-content-types/blob/master/README.md#features)
   - [Notes](https://github.com/tooit/meteor-content-types/blob/master/README.md#notes)
@@ -19,6 +20,7 @@ If you're familiar with *"Sometimes you gotta run before you can walk."* by Tony
     - [Create your own Displays](https://github.com/tooit/meteor-content-types/blob/master/README.md#create-your-own-displays)
     - [Template helpers and events](https://github.com/tooit/meteor-content-types/blob/master/README.md#template-helpers-and-events)
     - [Labels](https://github.com/tooit/meteor-content-types/blob/master/README.md#labels)
+  - [UI Registered Helpers](https://github.com/tooit/meteor-content-types/blob/master/README.md#ui-registered-helpers)
 - [How this package works](https://github.com/tooit/meteor-content-types/blob/master/README.md#how-this-package-works)
 - [Example Applications](https://github.com/tooit/meteor-content-types/blob/master/README.md#example-applications)
 - [Result of using this package](https://github.com/tooit/meteor-content-types/blob/master/README.md#result-of-using-this-package)
@@ -30,6 +32,26 @@ We develop the package based on this approach because, after working on several 
 This package is our way to find a scalable and flexible architecture to manage multiple kind of documents in the same Meteor app. We thought this design based on the lot of patterns that [Drupal](http://www.drupal.org/) implements. We are not trying to copy Drupal but to reuse several useful practices that let Drupal be one of the biggest CMS/Application Frameworks in the market.
 
 We wish that you find this package useful for your personal and/or business apps and please any suggestion, merge or feature request or anything that you consider proper to improve this package don't hesitate in contact us at [info@tooit.com](mailto:info@tooit.com) or subscribe an issue.
+
+## Requirements
+
+This package as almost every app needs a router. This package supports Flow Router as well as Iron Router (both as a "weak" dependency in package.js).
+
+```bash
+// Flow Router
+meteor add kadira:flow-router kadira:blaze-layout
+
+// Iron Router
+meteor add iron:router
+```
+
+By default Flow Router is used and to setup Iron Router you need to add the following configuration somwhere in your app before loading the content types (for example at ``client/lib/config.js``.
+
+```javascript
+ContentTypes.Configure({
+  router: 'iron_router'
+});
+```
 
 ## Install
 
@@ -93,7 +115,10 @@ Now, in the Meteor's client-only scope.
 ```javascript
 BooksCT = new ContentType({
   collection:       Books, // The collection defined above.
-  ctid:             "book" // The content type id.
+  ctid:             "book", // The content type id.
+  // Optional. The layout to be passed to the router.
+  // If none is used a default one with "UI.dynamic template=content" will be provided.
+  layout:           "MyAppLayout"
 });
 ```
 
@@ -342,6 +367,33 @@ BooksCT = new ContentType({
 });
 ```
 
+### UI Registered Helpers
+
+``ctGetFieldValue``: Needed to get a single property or method from any Object using a dynamic key.
+
+```handlebars
+...
+{{#each cursor}}
+  {{#each ct.fields}}
+    <a abbr="{{value}}">{{ctGetFieldValue .. key}}</a>
+  {{/each}}
+{{/each}}
+...
+```
+
+``ctPathFor``: This is the pathFor from iron:router and also implemented in the package arillo:meteor-flow-router-helpers. We add those here to avoid unnecesary dependencies and to allow router abstraction layer.
+
+```handlebars
+... <a href="{{ctPathFor route='someRouteName' _id='SomeId'}}">...
+```
+
+``ctDebug`` : Useful to debug template helper variables. This is not required in any way and will be removed on future releases. Use it only if you know what you are doing.
+
+```handlebars
+{{#each cursor}}{{ctDebug this}}{{/each}} <!-- This will print all cursor documents -->
+{{#each ct.fields}}{{ctDebug this}}{{/each}} <!-- This will print the key names from ct.fields -->
+```
+
 ## How this package works
 
 When the constructor is called to build a new Content Type, the following steps will be run.
@@ -371,9 +423,8 @@ Please, if reading this you consider that the design could be improved in any wa
 
 ## Example Applications
 
-- [Bootstrap Theme](http://content-types-example-bootstrap.meteor.com/)
-- [Materialize Theme](http://content-types-example-materialize.meteor.com/)
-- [Basic Theme](http://content-types-example.meteor.com/)
+- [Bootstrap Theme](http://content-types-example-bootstrap.meteor.com/) (demo using kadira:flow-router)
+- [Basic Theme](http://content-types-example.meteor.com/) (demo using iron:router)
 
 ## Result of using this package
 
