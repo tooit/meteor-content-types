@@ -7,16 +7,13 @@ This file shows the templates provided by the "default" theme. This could be use
 - [Introduction](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#Introduction)
 - [Shared template helpers](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#shared_template_helpers)
 - [Templates](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#templates)
-  - [CT_index_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_index_default)
-  - [CT_index_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_index_default_default)
-  - [CT_create_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_create_default)
-  - [CT_create_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_create_default_default)
-  - [CT_read_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_read_default)
-  - [CT_read_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_read_default_default)
-  - [CT_update_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_update_default)
-  - [CT_update_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_update_default_default)
-  - [CT_delete_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_delete_default)
-  - [CT_delete_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_delete_default_default)
+- [CT_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_default_default)
+- [CT_index_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_index_default_default)
+- [CT_create_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_create_default_default)
+- [CT_read_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_read_default_default)
+- [CT_update_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_update_default_default)
+- [CT_delete_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_delete_default_default)
+- [CT_archived_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_archived_default_default)
 
 ## Introduction
 
@@ -41,13 +38,13 @@ The following keys will be available on all display templates (not on wrapper te
 
 List of Meteor templates provided with the default theme.
 
-### CT_index_default
+### CT_default_default
 
-The wrapper template for ``Index`` endpoint.
+The wrapper template for all the endpoints.
 
 ```handlebars
-<template name="CT_index_default">
-  <div>{{> Template.dynamic template=template }}</div>
+<template name="CT_default_default">
+  <div>{{> UI.dynamic template=template }}</div>
 </template>
 ```
 
@@ -70,7 +67,10 @@ The default display for ``Index`` endpoint.
 
   <ul>
     {{#if ct.pathTo.create}}
-      <li><a href="{{pathFor route=ct.pathTo.create}}" title="{{ct.labels.linkCreate}}">{{ct.labels.linkCreate}}</a></li>
+      <li><a href="{{ctPathFor route=ct.pathTo.create}}" title="{{ct.labels.linkCreate}}">{{ct.labels.linkCreate}}</a></li>
+    {{/if}}
+    {{#if ctSettingEquals 'deleteType' 'soft'}}
+      <li><a href="{{ctPathFor route=ct.pathTo.archive}}" title="{{ct.labels.linkArchive}}">{{ct.labels.linkArchive}}</a></li>
     {{/if}}
   </ul>
 
@@ -93,13 +93,17 @@ The default display for ``Index`` endpoint.
               {{/each}}
               <td>
                 {{#if ct.pathTo.read}}
-                  <a href="{{pathFor route=ct.pathTo.read}}" title="{{ct.labels.linkView}}">{{ct.labels.linkView}}</a>
+                  <a href="{{ctPathFor route=ct.pathTo.read _id=_id}}" title="{{ct.labels.linkView}}">{{ct.labels.linkView}}</a>
                 {{/if}}
                 {{#if ct.pathTo.update}}
-                  <a href="{{pathFor route=ct.pathTo.update}}" title="{{ct.labels.linkEdit}}">{{ct.labels.linkEdit}}</a>
+                  <a href="{{ctPathFor route=ct.pathTo.update _id=_id}}" title="{{ct.labels.linkEdit}}">{{ct.labels.linkEdit}}</a>
                 {{/if}}
-                {{#if ct.pathTo.delete}}
-                  <a href="{{pathFor route=ct.pathTo.delete}}" title="{{ct.labels.linkDelete}}">{{ct.labels.linkDelete}}</a>
+                {{#if ctSettingEquals 'deleteType' 'soft'}}
+                    <a href="" class="ct-soft-delete-btn" data-id="{{_id}}" title="{{ct.labels.linkDelete}}">{{ct.labels.linkDelete}}</a>
+                {{else}}
+                  {{#if ct.pathTo.delete}}
+                    <a href="{{ctPathFor route=ct.pathTo.delete _id=_id}}" title="{{ct.labels.linkDelete}}">{{ct.labels.linkDelete}}</a>
+                  {{/if}}
                 {{/if}}
               </td>
             </tr>
@@ -120,19 +124,9 @@ The default display for ``Index`` endpoint.
 - ``item.total``: total document count.
 - And the rest of common helpers shared by all Index+CRUD endpoints.
 
-### CT_create_default
+#### Template events
 
-The wrapper template for ``Create`` endpoint.
-
-```handlebars
-<template name="CT_create_default">
-  <div>{{> Template.dynamic template=template }}</div>
-</template>
-```
-
-#### Template helpers
-
-- ``template``: a reactive var containing the name of the display to be rendered. You could update this display without running the route again by doing ``MyAwesomeContentType.setDisplay('index', 'new-display');``.
+- ``click .ct-soft-delete-btn``: this handler will fire the soft delete action.
 
 ### CT_create_default_default
 
@@ -151,10 +145,11 @@ The default display for ``Create`` endpoint.
 
   <ul>
     {{#if ct.pathTo.index}}
-      <li><a href="{{pathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
+      <li><a href="{{ctPathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
     {{/if}}
   </ul>
 </template>
+
 ```
 
 #### Template helpers
@@ -163,20 +158,6 @@ The default display for ``Create`` endpoint.
 - ``formId``: the form id to be used by autoform package.
 - ``formType``: the form type to be used by autoform package.
 - And the rest of common helpers shared by all Index+CRUD endpoints.
-
-### CT_read_default
-
-The wrapper template for ``Read`` endpoint.
-
-```handlebars
-<template name="CT_read_default">
-  <div>{{> Template.dynamic template=template }}</div>
-</template>
-```
-
-#### Template helpers
-
-- ``template``: a reactive var containing the name of the display to be rendered. You could update this display without running the route again by doing ``MyAwesomeContentType.setDisplay('index', 'new-display');``.
 
 ### CT_read_default_default
 
@@ -210,40 +191,51 @@ The default display for ``Read`` endpoint.
         {{/each}}
       </tbody>
     </table>
+  {{/with}}
 
-    <ul>
+
+  <ul>
+    {{#with item}}
       {{#if ct.pathTo.update}}
-        <li><a href="{{pathFor route=ct.pathTo.update}}" title="{{ct.labels.linkEdit}}">{{ct.labels.linkEdit}}</a></li>
+        <li><a href="{{ctPathFor route=ct.pathTo.update _id=_id}}" title="{{ct.labels.linkEdit}}">{{ct.labels.linkEdit}}</a></li>
       {{/if}}
-      {{#if ct.pathTo.delete}}
-        <li><a href="{{pathFor route=ct.pathTo.delete}}" title="{{ct.labels.linkDelete}}">{{ct.labels.linkDelete}}</a></li>
+      {{#if ctSettingEquals 'deleteType' 'soft'}}
+          <li><a href="" class="ct-soft-delete-btn" data-id="{{_id}}" title="{{ct.labels.linkDelete}}">{{ct.labels.linkDelete}}</a></li>
+      {{else}}
+        {{#if ct.pathTo.delete}}
+          <li><a href="{{ctPathFor route=ct.pathTo.delete _id=_id}}" title="{{ct.labels.linkDelete}}">{{ct.labels.linkDelete}}</a></li>
+        {{/if}}
       {{/if}}
       {{#if ct.pathTo.index}}
-        <li><a href="{{pathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
+        <li><a href="{{ctPathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
       {{/if}}
-    </ul>
-  {{/with}}
+    {{/with}}
+
+    {{#unless item}}
+      {{#if ctSettingEquals 'deleteType' 'soft'}}
+        <li><a href="" class="ct-restore-btn" data-id="{{itemId}}" title="{{ct.labels.linkRestore}}">{{ct.labels.linkRestore}}</a></li>
+      {{/if}}
+      {{#if ct.pathTo.index}}
+        <li><a href="{{ctPathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
+      {{/if}}
+      {{#if ctSettingEquals 'deleteType' 'soft'}}
+        <li><a href="{{ctPathFor route=ct.pathTo.archive}}" title="{{ct.labels.backToArchive}}">{{ct.labels.backToArchive}}</a></li>
+      {{/if}}
+    {{/unless}}
+  </ul>
 </template>
 ```
 
 #### Template helpers
 
-- ``item``: the mongo document about to be deleted.
+- ``item``: the mongo document about to be displayed.
+- ``itemId``: the document id, usefull whe soft delete is enabled and de document is archived
 - And the rest of common helpers shared by all Index+CRUD endpoints.
 
-### CT_update_default
+#### Template events
 
-The wrapper template for ``Update`` endpoint.
-
-```handlebars
-<template name="CT_update_default">
-  <div>{{> Template.dynamic template=template }}</div>
-</template>
-```
-
-#### Template helpers
-
-- ``template``: a reactive var containing the name of the display to be rendered. You could update this display without running the route again by doing ``MyAwesomeContentType.setDisplay('index', 'new-display');``.
+- ``click .ct-soft-delete-btn``: this handler will fire the soft delete action.
+- ``click .ct-restore-btn``: this handler will fire the restore action for an archived document.
 
 ### CT_update_default_default
 
@@ -265,15 +257,37 @@ The default display for ``Update`` endpoint.
   <ul>
     {{#with item}}
       {{#if ct.pathTo.read}}
-        <li><a href="{{pathFor route=ct.pathTo.read}}" title="{{ct.labels.linkView}}">{{ct.labels.linkView}}</a></li>
+        <li><a href="{{ctPathFor route=ct.pathTo.read _id=_id}}" title="{{ct.labels.linkView}}">{{ct.labels.linkView}}</a></li>
+      {{/if}}
+      {{#if ctSettingEquals 'deleteType' 'soft'}}
+          <li><a href="" class="ct-soft-delete-btn" data-id="{{_id}}" title="{{ct.labels.linkDelete}}">{{ct.labels.linkDelete}}</a></li>
+      {{else}}
+        {{#if ct.pathTo.delete}}
+          <li><a href="{{ctPathFor route=ct.pathTo.delete _id=_id}}" title="{{ct.labels.linkDelete}}">{{ct.labels.linkDelete}}</a></li>
+        {{/if}}
       {{/if}}
       {{#if ct.pathTo.create}}
-        <li><a href="{{pathFor route=ct.pathTo.create}}" title="{{ct.labels.linkCreate}}">{{ct.labels.linkCreate}}</a></li>
+        <li><a href="{{ctPathFor route=ct.pathTo.create _id=_id}}" title="{{ct.labels.linkCreate}}">{{ct.labels.linkCreate}}</a></li>
+      {{/if}}
+      {{#if ct.pathTo.index}}
+        <li><a href="{{ctPathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
       {{/if}}
     {{/with}}
-    {{#if ct.pathTo.index}}
-      <li><a href="{{pathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
-    {{/if}}
+
+    {{#unless item}}
+      {{#if ctSettingEquals 'deleteType' 'soft'}}
+        <li><a href="" class="ct-restore-btn" data-id="{{itemId}}" title="{{ct.labels.linkRestore}}">{{ct.labels.linkRestore}}</a></li>
+      {{/if}}
+      {{#if ct.pathTo.create}}
+        <li><a href="{{ctPathFor route=ct.pathTo.create _id=_id}}" title="{{ct.labels.linkCreate}}">{{ct.labels.linkCreate}}</a></li>
+      {{/if}}
+      {{#if ct.pathTo.index}}
+        <li><a href="{{ctPathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
+      {{/if}}
+      {{#if ctSettingEquals 'deleteType' 'soft'}}
+        <li><a href="{{ctPathFor route=ct.pathTo.archive}}" title="{{ct.labels.backToArchive}}">{{ct.labels.backToArchive}}</a></li>
+      {{/if}}
+    {{/unless}}
   </ul>
 </template>
 ```
@@ -281,25 +295,17 @@ The default display for ``Update`` endpoint.
 #### Template helpers
 
 - ``item``: the mongo document about to be updated.
+- ``itemId``: the document id, usefull whe soft delete is enabled and de document is archived
 - And the rest of common helpers shared by all Index+CRUD endpoints.
 
-### CT_delete_default
+#### Template events
 
-The wrapper template for ``Delete`` endpoint.
-
-```handlebars
-<template name="CT_delete_default">
-  <div>{{> Template.dynamic template=template }}</div>
-</template>
-```
-
-#### Template helpers
-
-- ``template``: a reactive var containing the name of the display to be rendered. You could update this display without running the route again by doing ``MyAwesomeContentType.setDisplay('index', 'new-display');``.
+- ``click .ct-soft-delete-btn``: this handler will fire the soft delete action.
+- ``click .ct-restore-btn``: this handler will fire the restore action for an archived document.
 
 ### CT_delete_default_default
 
-The default display for ``Create`` endpoint.
+The default display for ``Delete`` endpoint.
 
 ```handlebars
 <template name="CT_delete_default_default">
@@ -320,14 +326,14 @@ The default display for ``Create`` endpoint.
   <ul>
     {{#with item}}
       {{#if ct.pathTo.read}}
-        <li><a href="{{pathFor route=ct.pathTo.read}}" title="{{ct.labels.linkView}}">{{ct.labels.linkView}}</a></li>
+        <li><a href="{{ctPathFor route=ct.pathTo.read _id=_id}}" title="{{ct.labels.linkView}}">{{ct.labels.linkView}}</a></li>
       {{/if}}
       {{#if ct.pathTo.update}}
-        <li><a href="{{pathFor route=ct.pathTo.update}}" title="{{ct.labels.linkEdit}}">{{ct.labels.linkEdit}}</a></li>
+        <li><a href="{{ctPathFor route=ct.pathTo.update _id=_id}}" title="{{ct.labels.linkEdit}}">{{ct.labels.linkEdit}}</a></li>
       {{/if}}
     {{/with}}
     {{#if ct.pathTo.index}}
-      <li><a href="{{pathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
+      <li><a href="{{ctPathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
     {{/if}}
   </ul>
 </template>
@@ -338,23 +344,66 @@ The default display for ``Create`` endpoint.
 - ``item``: the mongo document about to be deleted.
 - And the rest of common helpers shared by all Index+CRUD endpoints.
 
+### CT_archived_default_default
 
+The default display for ``Archived`` endpoint.
 
+```handlebars
+<template name="CT_archived_default_default">
+  {{#with meta}}
+    {{#if title}}<h2>{{{title}}}</h2>{{/if}}
+    {{#if summary}}<p>{{{summary}}}</p>{{/if}}
+    {{#if help}}<small>{{{help}}}</small>{{/if}}
+    <hr/>
+  {{/with}}
 
+  <ul>
+    {{#if ct.pathTo.create}}
+      <li><a href="{{ctPathFor route=ct.pathTo.create}}" title="{{ct.labels.linkCreate}}">{{ct.labels.linkCreate}}</a></li>
+    {{/if}}
+    {{#if ct.pathTo.index}}
+      <li><a href="{{ctPathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
+    {{/if}}
+  </ul>
 
+  {{#with items}}
+    {{#if total}}
+      <table width="100%" border="1">
+        <thead>
+          <tr>
+            {{#each ct.fields}}
+              <th abbr="{{ key }}">{{value}}</th>
+            {{/each}}
+            <th abbr="actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each cursor}}
+            <tr>
+              {{#each ct.fields}}
+                <td abbr="{{value}}">{{ctGetFieldValue .. key}}</td>
+              {{/each}}
+              <td>
+                <a href="" class="ct-restore-btn" data-id="{{_id}}" title="{{ct.labels.linkRestore}}">{{ct.labels.linkRestore}}</a>
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+      <p>{{ct.labels.totalItemsPrefix}} <strong>{{total}}</strong> {{ct.labels.totalItemsSuffix}}</p>
+    {{else}}
+      <p>{{ct.labels.noItemsFound}}</p>
+    {{/if}}
+  {{/with}}
+</template>
+```
 
+#### Template helpers
 
+- ``item.cursor``: the mongo document reactive cursor.
+- ``item.total``: total document count.
+- And the rest of common helpers shared by all Index+CRUD endpoints.
 
+#### Template events
 
-
-
-
-
-
-
-
-
-
-
-
-
+- ``click .ct-restore-btn``: this handler will fire the restore action for an archived document.

@@ -1,3 +1,11 @@
+# v0.0.10
+
+- added default fields
+- enabled soft detele as default delete option
+- added archived enpoint when doft delete is enabled
+- updated documentation for README.md
+- updated documentation for TEMPLATES_default.md
+
 # v0.0.9
 
 - added kadira:flow-router and kadira:blaze-layout as weak dependencies
