@@ -1,4 +1,4 @@
-<template name="CT_index_default_default">
+<template name="CT_archived_default_default">
   {{#with meta}}
     {{#if title}}<h2>{{{title}}}</h2>{{/if}}
     {{#if summary}}<p>{{{summary}}}</p>{{/if}}
@@ -10,8 +10,8 @@
     {{#if ct.pathTo.create}}
       <li><a href="{{ctPathFor route=ct.pathTo.create}}" title="{{ct.labels.linkCreate}}">{{ct.labels.linkCreate}}</a></li>
     {{/if}}
-    {{#if ctSettingEquals 'deleteType' 'soft'}}
-      <li><a href="{{ctPathFor route=ct.pathTo.archive}}" title="{{ct.labels.linkArchive}}">{{ct.labels.linkArchive}}</a></li>
+    {{#if ct.pathTo.index}}
+      <li><a href="{{ctPathFor route=ct.pathTo.index}}" title="{{ct.labels.backToIndex}}">{{ct.labels.backToIndex}}</a></li>
     {{/if}}
   </ul>
 
@@ -33,19 +33,7 @@
                 <td abbr="{{value}}">{{ctGetFieldValue .. key}}</td>
               {{/each}}
               <td>
-                {{#if ct.pathTo.read}}
-                  <a href="{{ctPathFor route=ct.pathTo.read _id=_id}}" title="{{ct.labels.linkView}}">{{ct.labels.linkView}}</a>
-                {{/if}}
-                {{#if ct.pathTo.update}}
-                  <a href="{{ctPathFor route=ct.pathTo.update _id=_id}}" title="{{ct.labels.linkEdit}}">{{ct.labels.linkEdit}}</a>
-                {{/if}}
-                {{#if ctSettingEquals 'deleteType' 'soft'}}
-                    <a href="" class="ct-soft-delete-btn" data-id="{{_id}}" title="{{ct.labels.linkDelete}}">{{ct.labels.linkDelete}}</a>
-                {{else}}
-                  {{#if ct.pathTo.delete}}
-                    <a href="{{ctPathFor route=ct.pathTo.delete _id=_id}}" title="{{ct.labels.linkDelete}}">{{ct.labels.linkDelete}}</a>
-                  {{/if}}
-                {{/if}}
+                <a href="" class="ct-restore-btn" data-id="{{_id}}" title="{{ct.labels.linkRestore}}">{{ct.labels.linkRestore}}</a>
               </td>
             </tr>
           {{/each}}
@@ -57,3 +45,4 @@
     {{/if}}
   {{/with}}
 </template>
+
