@@ -33,11 +33,18 @@ Package.onUse(function(api) {
     'client/lib/UIHelpers.js',
     'client/templates/default/_wrapper.html',
     'client/templates/default/index.html',
+    'client/templates/default/archived.html',
     'client/templates/default/create.html',
     'client/templates/default/read.html',
     'client/templates/default/update.html',
     'client/templates/default/delete.html'
   ], 'client');
+
+  api.addFiles([
+    'lib/common.js',
+    'lib/methods.js',
+    'lib/defaultSchemaFields.js'
+  ]);
 
   api.export([
     'ContentType',
