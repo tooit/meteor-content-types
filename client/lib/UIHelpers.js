@@ -22,6 +22,7 @@ UI.registerHelper('ctGetFieldValue', function (item, key) {
   return item[key];
 });
 
+
 /**
  * This is the pathFor from iron:router and also implemented in the package
  * arillo:meteor-flow-router-helpers. We add those here to avoid
@@ -85,6 +86,18 @@ UI.registerHelper('ctPathFor', function (options) {
   return url;
 });
 
+/**
+ * This let the user compare a value from ContentTypes settings
+ * key.
+ *
+ * @param  {String} key      The key to read from ContentTypes settings.
+ * @param  {String} value    the value to a make the comparation.
+ *
+ * @return {Boolean} The result of the comparation.
+ */
+UI.registerHelper('ctSettingEquals', function (key, value) {
+  return ContentTypes.getSetting(key) == value;
+});
 
 
 
