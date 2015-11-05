@@ -55,8 +55,25 @@ ContentType = function (options) {
  * Run the initialization procedures.
  */
 ContentType.prototype.initialize = function () {
+
+  check(ContentTypes.getSetting('deleteType'), String);
+  check(ContentTypes.getSetting('defaultFields'), Array);
+
   var self = this;
-  var endpoints = this._getEndPoints();
+  var endpoints = self._getEndPoints();
+  var defaultFields = ContentTypes.getSetting('defaultFields');
+  var collectionName = self._collection['_name'];
+
+  /** Alter collection schema to add default fields */
+
+  //extend default fields if soft delete is enabled
+  if(ContentTypes.getSetting('deleteType') == 'soft') {
+    defaultFields.push('archived');
+  }
+
+  Meteor.call('alterSchema', collectionName, defaultFields );
+
+  /** Now we must creat a rute for each endpoint defined */
 
   _.each(endpoints, function (endpoint, key){
     check(endpoint.enabled, Boolean);
@@ -342,60 +359,39 @@ ContentType.prototype._getEndPoints = function () {
 
   var endpoints = {
     index: {
-      enabled: true,
       name: 'ct.'+self._ctid+'.index',
       path: self._basePath+'/'+self._ctid+'/index',
-      layout: self._layout,
-      before: function() { return; },
-      display: 'default',
-      displays: {
-        default: {}
-      }
     },
     create: {
-      enabled: true,
       name: 'ct.'+this._ctid+'.create',
       path: this._basePath+'/'+this._ctid+'/create',
-      layout: self._layout,
-      before: function() { return; },
-      display: 'default',
-      displays: {
-        default: {}
-      }
+    },
+    archived: {
+      name: 'ct.'+self._ctid+'.archived',
+      path: self._basePath+'/'+self._ctid+'/archived',
     },
     read: {
-      enabled: true,
       name: 'ct.'+this._ctid+'.read',
       path: this._basePath+'/'+this._ctid+'/:_id',
-      layout: self._layout,
-      before: function() { return; },
-      display: 'default',
-      displays: {
-        default: {}
-      }
     },
     update: {
-      enabled: true,
       name: 'ct.'+this._ctid+'.update',
       path: this._basePath+'/'+this._ctid+'/:_id/edit',
-      layout: self._layout,
-      before: function() { return; },
-      display: 'default',
-      displays: {
-        default: {}
-      }
     },
     delete: {
-      enabled: true,
       name: 'ct.'+this._ctid+'.delete',
       path: this._basePath+'/'+this._ctid+'/:_id/delete',
-      layout: self._layout,
-      before: function() { return; },
-      display: 'default',
-      displays: {
-        default: {}
-      }
     }
+  }
+
+  // Extend endpoints properties with defaults.
+  _.each(endpoints, function (endpoint, key) {
+      endpoints[key] = _.extend(endpoints[key], defaultEndpointProperties);
+  });
+
+  // Disable archived endpoint if hard delete is configured.
+  if(ContentTypes.getSetting('deleteType') != 'soft') {
+    endpoints.archived.enabled = false;
   }
 
   // Extend default endpoints based on received options.
@@ -419,6 +415,8 @@ ContentType.prototype._getTemplateHelpers = function (key) {
   check(key, String);
 
   var self = this;
+  var isSoftDelete = ContentTypes.getSetting('deleteType') == 'soft';
+
 
   var helpers = {
     index: {
@@ -426,7 +424,8 @@ ContentType.prototype._getTemplateHelpers = function (key) {
         title: 'Documents of type <strong>' + self._ctid + '</strong>'
       },
       items: function () {
-        var cursor = self._collection.find({});
+        var q = ((isSoftDelete) ? {archived:null} : {} );
+        var cursor = self._collection.find(q);
         return {
           cursor: cursor,
           total: cursor.count()
@@ -447,7 +446,16 @@ ContentType.prototype._getTemplateHelpers = function (key) {
       },
       item: function () {
         var router = self.currentRoute();
-        return self._collection.findOne({_id:router.params._id});
+
+        var sdq = ((isSoftDelete) ? {archived:null} : {});
+        var q = {_id:router.params._id};
+        var query =  _.extend(q,sdq) ;
+
+        return self._collection.findOne( query );
+      },
+      itemId: function (){
+        var router = self.currentRoute();
+        return router.params._id;
       }
     },
     update: {
@@ -459,7 +467,16 @@ ContentType.prototype._getTemplateHelpers = function (key) {
       formType: 'update',
       item: function () {
         var router = self.currentRoute();
-        return self._collection.findOne({_id:router.params._id});
+
+        var sdq = ((isSoftDelete) ? {archived:null} : {});
+        var q = {_id:router.params._id};
+        var query =  _.extend(q,sdq) ;
+
+        return self._collection.findOne( query );
+      },
+      itemId: function (){
+        var router = self.currentRoute();
+        return router.params._id;
       }
     },
     delete: {
@@ -473,6 +490,23 @@ ContentType.prototype._getTemplateHelpers = function (key) {
       }
     }
   };
+
+  //Extend helpers if archived endpoint was added
+  // @see _getEndPoints
+  if(isSoftDelete) {
+    helpers.archived = {
+      meta: {
+        title: 'Archived documents of type <strong>' + self._ctid + '</strong>'
+      },
+      items: function () {
+        var cursor = self._collection.find({archived:{$ne:null}});
+        return {
+          cursor: cursor,
+          total: cursor.count()
+        };
+      }
+    };
+  }
 
   // Initialize display template helpers for custom endpoints.
   if (!Match.test(helpers[key], Object)){
@@ -488,7 +522,8 @@ ContentType.prototype._getTemplateHelpers = function (key) {
       create:   'ct.'+self._ctid+'.create',
       read:     'ct.'+self._ctid+'.read',
       update:   'ct.'+self._ctid+'.update',
-      delete:   'ct.'+self._ctid+'.delete'
+      delete:   'ct.'+self._ctid+'.delete',
+      archive: 'ct.'+self._ctid+'.archived',
     }
   };
 
@@ -507,15 +542,55 @@ ContentType.prototype._getTemplateEvents = function (key) {
   var self = this;
 
   var events = {
-    index: {},
+    index: {
+      'click .ct-soft-delete-btn': function (event) {
+        event.preventDefault();
+        var id = event.target.getAttribute('data-id');
+        Meteor.call('archive', self._collection['_name'], id );
+      }
+    },
     create: {},
-    read: {},
-    update: {},
+    read: {
+      'click .ct-soft-delete-btn': function (event) {
+        event.preventDefault();
+        var id = event.target.getAttribute('data-id');
+        Meteor.call('archive', self._collection['_name'], id );
+      },
+      'click .ct-restore-btn': function (event) {
+        event.preventDefault();
+        var id = event.target.getAttribute('data-id');
+        Meteor.call('restore', self._collection['_name'], id );
+      }
+    },
+    update: {
+      'click .ct-soft-delete-btn': function (event) {
+        event.preventDefault();
+        var id = event.target.getAttribute('data-id');
+        Meteor.call('archive', self._collection['_name'], id );
+      },
+      'click .ct-restore-btn': function (event) {
+        event.preventDefault();
+        var id = event.target.getAttribute('data-id');
+        Meteor.call('restore', self._collection['_name'], id );
+      }
+    },
     delete: {}
   };
 
-  //initialize events for custom endpoints
-    if (_.isUndefined(events[key])){
+  //Extend Events if archived endpoint was added
+  // @see _getEndPoints
+  if(ContentTypes.getSetting('deleteType') == 'soft') {
+    events.archived = {
+      'click .ct-restore-btn': function (event) {
+        event.preventDefault();
+        var id = event.target.getAttribute('data-id');
+        Meteor.call('restore', self._collection['_name'], id );
+      }
+    };
+  }
+
+  //Initialize events for custom endpoints
+  if (!Match.test(events[key], Object)){
     events[key] = {};
   }
 
@@ -533,6 +608,7 @@ ContentType.prototype._getTemplateLabels = function (labels) {
 
   var labels = {
     backToIndex: "Back to Index",
+    backToArchive: "Back to Archived",
     backToDocument: "Back to Document",
     confirmOk: "Yes, I'am sure",
     deletePrefix: "You are about to delete the document",
@@ -540,7 +616,9 @@ ContentType.prototype._getTemplateLabels = function (labels) {
     linkView: "View",
     linkEdit: "Edit",
     linkDelete: "Delete",
+    linkRestore: "Restore",
     linkCreate: "Create new document",
+    linkArchive: "View archived documents",
     totalItemsPrefix: "Found",
     totalItemsSuffix: "item/s.",
     noItemsFound: "No documents found.",

@@ -4,8 +4,12 @@
 CT = function () {
   this.settings = {
     // The kind of enabled router (iron_router or flow_router).
-    router: 'flow_router'
-  }
+    router: 'flow_router',
+    // Type of delete (soft or hard)
+    deleteType: 'soft',
+    // default content types fields
+    defaultFields: ['title', 'created', 'updated']
+  };
 }
 
 CT.prototype.Configure = function (options) {

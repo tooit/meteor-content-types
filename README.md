@@ -19,6 +19,8 @@ If you're familiar with *"Sometimes you gotta run before you can walk."* by Tony
     - [Displays](https://github.com/tooit/meteor-content-types/blob/master/README.md#displays)
     - [Create your own Displays](https://github.com/tooit/meteor-content-types/blob/master/README.md#create-your-own-displays)
     - [Template helpers and events](https://github.com/tooit/meteor-content-types/blob/master/README.md#template-helpers-and-events)
+    - [Default fields support](https://github.com/tooit/meteor-content-types/blob/master/README.md#default-fields-support)
+    - [Soft and Hard delete support](https://github.com/tooit/meteor-content-types/blob/master/README.md#soft-and-hard-delete-support)
     - [Labels](https://github.com/tooit/meteor-content-types/blob/master/README.md#labels)
   - [UI Registered Helpers](https://github.com/tooit/meteor-content-types/blob/master/README.md#ui-registered-helpers)
 - [How this package works](https://github.com/tooit/meteor-content-types/blob/master/README.md#how-this-package-works)
@@ -126,6 +128,7 @@ Done! Out of the box, this code will create this Router routes:
 
 - ``admin/content/books/index``: with a plain list of documents.
 - ``admin/content/books/create``: with an autoform insert form (quickForm).
+- ``admin/content/books/archived``: with a plain list of archived documents ( when soft delete is enabled).
 - ``admin/content/books/:_id``: with a simple table showing all document values.
 - ``admin/content/books/:_id/edit``: with an autoform update form (quickForm).
 - ``admin/content/books/:_id/delete``: with a confirmation page (quickRemoveButton).
@@ -134,6 +137,7 @@ Done! Out of the box, this code will create this Router routes:
 
 - ``Template.CT_index_default_book``: the default Display for the admin/content/books/index route.
 - ``Template.CT_create_default_book``: the default Display for the admin/content/books/create route.
+- ``Template.CT_archived_default_book``: the default Display for the admin/content/books/archived route
 - ``Template.CT_read_default_book``: the default Display for the admin/content/books/read route.
 - ``Template.CT_update_default_book``: the default Display for the admin/content/books/update route.
 - ``Template.CT_delete_default_book``: the default Display for the admin/content/books/delete route.
@@ -295,16 +299,13 @@ BooksCT = new ContentType({
 
 We find ourselfs usually creating our custom Displays to extend some parts of the endpoints default behaviour. Because of that, we added the Template documentation as a start point of creating your own Displays by doing copy+pase from one of the defaults Display templates.
 
-- [CT_index_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_index_default)
+- [CT_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_default_default)
 - [CT_index_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_index_default_default)
-- [CT_create_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_create_default)
 - [CT_create_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_create_default_default)
-- [CT_read_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_read_default)
 - [CT_read_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_read_default_default)
-- [CT_update_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_update_default)
 - [CT_update_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_update_default_default)
-- [CT_delete_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_delete_default)
 - [CT_delete_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_delete_default_default)
+- [CT_archived_default_default](https://github.com/tooit/meteor-content-types/blob/master/TEMPLATES_default.md#ct_archived_default_default)
 
 For the complete Display Template documentation
 
@@ -352,6 +353,14 @@ BooksCT = new ContentType({
 });
 ```
 
+#### Default fields support
+
+  TODO
+
+#### Soft and Hard delete support
+
+  TODO
+
 #### Labels
 
 Provided templates recieves the ``ct.labels`` object with several text labels. You could modify texts using i18n labels or just create new ones.
@@ -368,6 +377,16 @@ BooksCT = new ContentType({
 ```
 
 ### UI Registered Helpers
+
+``ctSettingEquals``: Compare a Configuration setting against a value.
+
+```handlebars
+...
+{{#if ctSettingEquals 'deleteType' 'soft'}}}}
+  <a href="#">{{ct.labels.linkDelete}}</a>
+{{/if}}
+...
+```
 
 ``ctGetFieldValue``: Needed to get a single property or method from any Object using a dynamic key.
 
